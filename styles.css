@@ -599,30 +599,53 @@ body {
   color: var(--danger-text);
 }
 
-/* Card Action Buttons (Shopee-Style Add to Cart & Buy) */
+/* Card Action Buttons (Buy Now + Add to Cart + Details) */
 .card-actions-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-top: 14px;
 }
 
-.btn-add-cart {
-  flex: 2;
-  background: linear-gradient(135deg, #ea580c, #f97316);
+.btn-buy-now {
+  background: linear-gradient(135deg, #16a34a, #15803d);
   color: #ffffff;
   border: none;
-  padding: 12px;
-  min-height: 44px;
+  padding: 10px;
+  min-height: 42px;
   border-radius: var(--radius-md);
   font-weight: 800;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.28);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+}
+
+.btn-buy-now:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+.btn-add-cart {
+  background: linear-gradient(135deg, #ea580c, #f97316);
+  color: #ffffff;
+  border: none;
+  padding: 10px;
+  min-height: 42px;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
 }
 
 .btn-add-cart:hover {
@@ -631,15 +654,15 @@ body {
 }
 
 .btn-view-details {
-  flex: 1;
+  grid-column: 1 / -1;
   background: #fef3c7;
   color: var(--text-muted);
   border: 1px solid var(--border-amber);
-  padding: 12px;
-  min-height: 44px;
+  padding: 8px;
+  min-height: 36px;
   border-radius: var(--radius-md);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
 }

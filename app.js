@@ -1,8 +1,9 @@
 /************************************************************
  * K'S BAKERY — MODERN CLIENT APPLICATION LOGIC
- * Handles Shopee-Style Shopping Cart System (Add to Cart, Quantity Controls,
- * Persistence, Dynamic Totals, Multi-Item SMS Text Messaging Checkout),
- * Category Filtering, Dynamic Tag Management, and Store Status Tagging.
+ * Handles Buy Now (Direct Single-Item Order) & Shopee-Style Add to Cart,
+ * Direct Facebook Messenger Order Integration (https://m.me/marygrace.baduyenbuligen),
+ * Multi-Platform Checkout for PC & Mobile (WhatsApp Web, Clipboard, SMS),
+ * Dual-Level Category Filtering, Dynamic Tag Management, and Store Status Tagging.
  ************************************************************/
 
 const STORAGE_KEY_PRODUCTS = "KS_BAKERY_PRODUCTS_V6";
@@ -14,6 +15,7 @@ const STORAGE_KEY_CART = "KS_BAKERY_CART_V1";
 const DEFAULT_PASSWORD = "KsBakery2026";
 const SELLER_PHONE_NUMBER = "09955314145";
 const SELLER_PHONE_INTL = "+639955314145";
+const SELLER_MESSENGER_HANDLE = "marygrace.baduyenbuligen"; // Mary Grace Baduyen Buligen
 
 // Default Dynamic Bakery Product Tags
 const DEFAULT_BAKERY_TAGS = [
@@ -128,7 +130,9 @@ let activeProductType = "All"; // Bakery Products pills: All, Breads, Cakes, Coo
 let isSellerMode = false;
 let storeStatus = { ...DEFAULT_STORE_STATUS };
 let editingPastryId = null;
+let activeOrderingPastry = null;
 let currentUploadedBase64 = null;
+let currentPreparedOrderText = "";
 
 // Initialize Application
 document.addEventListener("DOMContentLoaded", () => {
@@ -435,7 +439,7 @@ function renderCartDrawer() {
       <div style="text-align: center; padding: 40px 20px; color: #78350f;">
         <span style="font-size: 44px; display: block; margin-bottom: 8px;">🛒</span>
         <h4 style="font-family: 'Playfair Display', serif; font-size: 20px;">Your Cart is Empty</h4>
-        <p style="font-size: 13px; margin-top: 4px;">Browse our fresh pastries and click <b>➕ Add to Cart</b>!</p>
+        <p style="font-size: 13px; margin-top: 4px;">Browse our fresh pastries and click <b>🛒 Add to Cart</b> or <b>⚡ Buy Now</b>!</p>
       </div>
     `;
     if (totalAmountEl) totalAmountEl.textContent = "₱0.00";
@@ -474,7 +478,101 @@ function renderCartDrawer() {
   if (totalAmountEl) totalAmountEl.textContent = `₱${grandTotal.toFixed(2)}`;
 }
 
-// Multi-Item SMS Text Messaging Checkout Function
+// Single-Item Direct Buy Now Modal Controls
+function openDirectBuyNowModal(id) {
+  const pastry = pastries.find(p => p.id === id);
+  if (!pastry) return;
+
+  activeOrderingPastry = pastry;
+
+  document.getElementById("orderItemName").textContent = pastry.name;
+  document.getElementById("orderItemCategory").textContent = `${pastry.itemType || 'Pastry'} • ${pastry.category}`;
+  document.getElementById("orderItemPrice").textContent = `₱${Number(pastry.price).toFixed(2)}`;
+  document.getElementById("orderItemImg").src = pastry.image;
+
+  document.getElementById("orderQty").value = 1;
+  document.getElementById("orderCustomerName").value = "";
+  document.getElementById("orderCustomerPhone").value = "";
+  document.getElementById("orderFulfillment").value = pastry.category === "For Delivery" ? "Delivery" : "Pickup";
+  document.getElementById("orderNote").value = "";
+
+  updateOrderTotalPrice();
+  document.getElementById("orderModal").classList.add("active");
+}
+
+function closeOrderModal() {
+  document.getElementById("orderModal").classList.remove("active");
+}
+
+function updateOrderTotalPrice() {
+  if (!activeOrderingPastry) return;
+  const qty = parseInt(document.getElementById("orderQty").value, 10) || 1;
+  const total = activeOrderingPastry.price * qty;
+  document.getElementById("orderTotalPrice").textContent = `₱${total.toFixed(2)}`;
+}
+
+function submitCustomerSingleOrder(event) {
+  event.preventDefault();
+
+  if (!activeOrderingPastry) return;
+
+  const name = document.getElementById("orderCustomerName").value.trim();
+  const phone = document.getElementById("orderCustomerPhone").value.trim();
+  const fulfillment = document.getElementById("orderFulfillment").value;
+  const qty = parseInt(document.getElementById("orderQty").value, 10) || 1;
+  const note = document.getElementById("orderNote").value.trim();
+
+  if (!name || !phone) {
+    alert("Please enter your name and phone number so the seller can confirm your order.");
+    return;
+  }
+
+  const totalAmount = activeOrderingPastry.price * qty;
+
+  const smsBody = `🍞 K'S BAKERY DIRECT ORDER 🍞\n` +
+    `----------------------------\n` +
+    `Customer: ${name}\n` +
+    `Phone: ${phone}\n` +
+    `Item: ${activeOrderingPastry.name} [Tag: ${activeOrderingPastry.itemType || 'Pastry'}] (${activeOrderingPastry.category})\n` +
+    `Qty: ${qty} x ₱${activeOrderingPastry.price.toFixed(2)} = ₱${totalAmount.toFixed(2)}\n` +
+    `Fulfillment: ${fulfillment === "Pickup" ? "🏪 In-Store Pickup" : "🛵 Home Delivery"}\n` +
+    `Notes/Address: ${note || "None"}\n` +
+    `----------------------------\n` +
+    `Please confirm order availability. Thank you!`;
+
+  currentPreparedOrderText = smsBody;
+
+  const newOrder = {
+    id: Date.now(),
+    date: new Date().toLocaleString(),
+    customerName: name,
+    customerPhone: phone,
+    item: activeOrderingPastry.name,
+    qty: qty,
+    total: totalAmount,
+    fulfillment: fulfillment,
+    note: note
+  };
+
+  orders.unshift(newOrder);
+  saveOrdersToStorage();
+
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  
+  if (isMobile) {
+    const encodedSms = encodeURIComponent(smsBody);
+    const smsUrl = `sms:${SELLER_PHONE_NUMBER}?body=${encodedSms}`;
+    closeOrderModal();
+    window.location.href = smsUrl;
+  } else {
+    // Desktop PC: Copy order text automatically & open PC Checkout Options Modal
+    copyOrderToClipboardSilently(smsBody);
+    closeOrderModal();
+    openPCCheckoutModal(smsBody, totalAmount);
+  }
+}
+
+// Multi-Item SMS Cart Checkout Function
 function submitCartOrderSMS(event) {
   event.preventDefault();
 
@@ -516,6 +614,8 @@ function submitCartOrderSMS(event) {
     `----------------------------------\n` +
     `Please confirm order availability. Thank you!`;
 
+  currentPreparedOrderText = smsBody;
+
   const newOrder = {
     id: Date.now(),
     date: new Date().toLocaleString(),
@@ -530,30 +630,95 @@ function submitCartOrderSMS(event) {
   orders.unshift(newOrder);
   saveOrdersToStorage();
 
-  const encodedSms = encodeURIComponent(smsBody);
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   
-  const smsUrl = isMobile 
-    ? `sms:${SELLER_PHONE_NUMBER}?body=${encodedSms}`
-    : `sms:${SELLER_PHONE_INTL}?body=${encodedSms}`;
-
-  const waUrl = `https://wa.me/63${SELLER_PHONE_NUMBER.substring(1)}?text=${encodedSms}`;
-
-  clearCart();
-  closeCartModal();
-
-  if (confirm(`Order summary created for ₱${totalAmount.toFixed(2)}!\n\nClick OK to open your SMS Messaging App and text your multi-item order directly to the seller (${SELLER_PHONE_NUMBER}).`)) {
+  if (isMobile) {
+    const encodedSms = encodeURIComponent(smsBody);
+    const smsUrl = `sms:${SELLER_PHONE_NUMBER}?body=${encodedSms}`;
+    clearCart();
+    closeCartModal();
     window.location.href = smsUrl;
   } else {
-    if (confirm("Would you like to send your order via WhatsApp / Viber message instead?")) {
-      window.open(waUrl, "_blank");
-    }
+    // Desktop PC: Copy order text automatically & open PC Checkout Options Modal
+    copyOrderToClipboardSilently(smsBody);
+    closeCartModal();
+    openPCCheckoutModal(smsBody, totalAmount);
   }
-
-  showToast("✅ Order text message prepared!");
 }
 
-// Dual Filtering Logic: 1. Top Fulfillment Category + 2. Bakery Product Sub-Category Tag
+function copyOrderToClipboardSilently(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast("📋 Order text automatically copied to clipboard!");
+    }).catch(() => {});
+  }
+}
+
+function openPCCheckoutModal(orderText, totalAmount) {
+  const modal = document.getElementById("pcCheckoutModal");
+  const textContainer = document.getElementById("pcOrderTextPreview");
+  const totalDisplay = document.getElementById("pcOrderTotalDisplay");
+
+  if (textContainer) textContainer.value = orderText;
+  if (totalDisplay) totalDisplay.textContent = `₱${totalAmount.toFixed(2)}`;
+
+  if (modal) modal.classList.add("active");
+}
+
+function closePCCheckoutModal() {
+  document.getElementById("pcCheckoutModal").classList.remove("active");
+  clearCart();
+  renderApp();
+}
+
+/**
+ * Open Messenger Directly to Mary Grace Baduyen Buligen (marygrace.baduyenbuligen)
+ */
+function openMessenger() {
+  // 1. Copy the formatted order text to the user's clipboard automatically
+  const previewArea = document.getElementById("pcOrderTextPreview");
+  const orderText = previewArea ? previewArea.value : currentPreparedOrderText;
+  
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(orderText);
+  }
+
+  // 2. Alert or notify the user that their order is copied
+  alert("Order copied to clipboard! Paste it (Ctrl + V) into Mary Grace Baduyen Buligen's Messenger chat.");
+
+  // 3. Open Messenger directly to Mary Grace Baduyen Buligen's account
+  window.open(`https://m.me/${SELLER_MESSENGER_HANDLE}`, "_blank");
+}
+
+function sendViaWhatsAppWeb() {
+  if (!currentPreparedOrderText) return;
+  const encoded = encodeURIComponent(currentPreparedOrderText);
+  const waUrl = `https://web.whatsapp.com/send?phone=63${SELLER_PHONE_NUMBER.substring(1)}&text=${encoded}`;
+  window.open(waUrl, "_blank");
+}
+
+function copyOrderTextBtnClick() {
+  if (!currentPreparedOrderText) return;
+  navigator.clipboard.writeText(currentPreparedOrderText).then(() => {
+    alert("✅ Order text copied to clipboard!\n\nYou can now paste (Ctrl+V) this order directly into Messenger, Viber, SMS, or Email to send to the seller (Mary Grace Baduyen Buligen).");
+  }).catch(() => {
+    const textarea = document.getElementById("pcOrderTextPreview");
+    if (textarea) {
+      textarea.select();
+      document.execCommand("copy");
+      alert("✅ Order text copied!");
+    }
+  });
+}
+
+function sendViaMobileSMSLink() {
+  if (!currentPreparedOrderText) return;
+  const encoded = encodeURIComponent(currentPreparedOrderText);
+  const smsUrl = `sms:${SELLER_PHONE_INTL}?body=${encoded}`;
+  window.location.href = smsUrl;
+}
+
+// Dual Filtering Logic
 function filterPastriesList() {
   const searchQuery = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
 
@@ -622,6 +787,9 @@ function renderPastriesGrid() {
             </div>
           </div>
           <div class="card-actions-row">
+            <button class="btn-buy-now" onclick="openDirectBuyNowModal(${p.id})">
+              ⚡ Buy Now
+            </button>
             <button class="btn-add-cart" onclick="addToCart(${p.id})">
               🛒 Add to Cart
             </button>
@@ -655,7 +823,7 @@ function setSubCategory(typeName) {
   renderPastriesGrid();
 }
 
-// Seller Dynamic Bakery Product Tag Management Functions (Add, Edit, Delete Tags)
+// Seller Dynamic Bakery Product Tag Management Functions
 function openManageTagsModal() {
   if (!isSellerMode) {
     toggleSellerPortal();
@@ -805,8 +973,7 @@ function openQuickViewModal(id) {
   if (orderNowBtn) {
     orderNowBtn.onclick = function() {
       closeQuickViewModal();
-      addToCart(id, 1);
-      openCartModal();
+      openDirectBuyNowModal(id);
     };
   }
 
@@ -817,7 +984,7 @@ function closeQuickViewModal() {
   document.getElementById("quickViewModal").classList.remove("active");
 }
 
-// Seller Authentication Portal (Password-Protected, No password preview hints)
+// Seller Authentication Portal
 function toggleSellerPortal() {
   if (isSellerMode) {
     if (confirm("Logout from Seller Portal?")) {

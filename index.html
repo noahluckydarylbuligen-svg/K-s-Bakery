@@ -123,7 +123,7 @@
       </span>
     </div>
 
-    <!-- Sub-Category Bakery Products Filter Bar (Renamed to 'Bakery Products:') -->
+    <!-- Sub-Category Bakery Products Filter Bar -->
     <div id="subCategoryBarContainer" class="sub-category-bar">
       <!-- Rendered dynamically by app.js -->
     </div>
@@ -148,6 +148,72 @@
       <p style="margin-top: 16px; font-size: 12px; opacity: 0.7;">© 2026 K's Bakery. All rights reserved.</p>
     </div>
   </footer>
+
+  <!-- Direct 1-Click Buy Now Modal -->
+  <div id="orderModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header" style="background: linear-gradient(135deg, #16a34a, #15803d); color: #fff;">
+        <h3>⚡ Buy Now Direct Order</h3>
+        <button class="modal-close-btn" onclick="closeOrderModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- Selected Item Summary -->
+        <div style="display:flex; gap:16px; align-items:center; background:#fffbeb; padding:12px 16px; border-radius:12px; border:1px solid var(--border-amber); margin-bottom:20px;">
+          <img id="orderItemImg" src="" alt="" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--primary-gold);">
+          <div>
+            <h4 id="orderItemName" style="font-family:'Playfair Display', serif; font-size:18px; color:#291e14; margin-bottom:2px;">Item Name</h4>
+            <span id="orderItemCategory" class="category-tag" style="position:static; display:inline-block; font-size:11px; padding:2px 8px;">Category</span>
+            <span id="orderItemPrice" style="font-weight:800; color:var(--primary-amber); margin-left:8px; font-size:16px;">₱0.00</span>
+          </div>
+        </div>
+
+        <form onsubmit="submitCustomerSingleOrder(event)">
+          <div class="form-group">
+            <label>Your Full Name *</label>
+            <input type="text" id="orderCustomerName" class="form-control" placeholder="e.g. Maria Santos" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Mobile Phone Number *</label>
+              <input type="tel" id="orderCustomerPhone" class="form-control" placeholder="09171234567" required>
+            </div>
+            <div class="form-group">
+              <label>Quantity *</label>
+              <input type="number" id="orderQty" class="form-control" min="1" max="100" value="1" oninput="updateOrderTotalPrice()" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Fulfillment Type *</label>
+            <select id="orderFulfillment" class="form-control" required>
+              <option value="Pickup">🏪 In-Store Pickup</option>
+              <option value="Delivery">🛵 Door-to-Door Delivery</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Pickup Time / Delivery Address & Notes</label>
+            <textarea id="orderNote" class="form-control" rows="2" placeholder="e.g. Pickup around 4:00 PM today, or complete delivery address..."></textarea>
+          </div>
+
+          <!-- Total Calculation -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#451a03; color:#fff; padding:12px 18px; border-radius:12px; margin-bottom:20px;">
+            <span style="font-size:14px; font-weight:600;">Total Amount:</span>
+            <span id="orderTotalPrice" style="font-size:24px; font-weight:800; color:#fbbf24;">₱0.00</span>
+          </div>
+
+          <button type="submit" class="btn-sms-order">
+            📱 Checkout Direct Order
+          </button>
+          
+          <p style="font-size:12px; color:#78350f; text-align:center; margin-top:10px;">
+            Formats order and connects directly via Messenger to Mary Grace Baduyen Buligen!
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <!-- Shopee-Style Customer Cart & Checkout Modal -->
   <div id="cartModal" class="modal-overlay">
@@ -195,14 +261,57 @@
           </div>
 
           <button type="submit" id="cartCheckoutBtn" class="btn-sms-order">
-            📱 Checkout & Send Order via SMS Text Message
+            📱 Checkout & Send Order Message
           </button>
           
           <p style="font-size:12px; color:#78350f; text-align:center; margin-top:10px;">
-            Clicking will format your complete cart order and open your phone's SMS Messages app directly addressed to the seller (<b>0995-531-4145</b>).
+            Works seamlessly on Mobile Phones & Desktop PCs via Messenger (Mary Grace Baduyen Buligen), WhatsApp Web, and SMS!
           </p>
         </form>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- PC Desktop Checkout Modal (Direct Messenger Link to Mary Grace Baduyen Buligen) -->
+  <div id="pcCheckoutModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-header" style="background:#16a34a; color:#fff;">
+        <h3>✅ Order Ready to Send!</h3>
+        <button class="modal-close-btn" onclick="closePCCheckoutModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:14px; color:#291e14; margin-bottom:12px;">
+          Your order total is <b id="pcOrderTotalDisplay" style="color:#d97706; font-size:18px;">₱0.00</b>. Choose your preferred messaging app to send your order to the seller (<b>0995-531-4145</b>):
+        </p>
+
+        <!-- Formatted Text Area Preview -->
+        <div class="form-group">
+          <label>Formatted Order Text (Auto-Copied)</label>
+          <textarea id="pcOrderTextPreview" class="form-control" rows="6" readonly style="font-family: monospace; font-size: 12px; background: #fffbeb;"></textarea>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
+          <button type="button" class="btn-sms-order" style="background:#0084ff; color:#fff;" onclick="openMessenger()">
+            ⚡ Send via Facebook Messenger (Mary Grace Baduyen Buligen)
+          </button>
+
+          <button type="button" class="btn-sms-order" style="background:#25d366; color:#fff;" onclick="sendViaWhatsAppWeb()">
+            💬 Send via WhatsApp Web
+          </button>
+          
+          <button type="button" class="btn-primary" style="background:#6d28d9;" onclick="copyOrderTextBtnClick()">
+            📋 Copy Order Text (For Viber / Email)
+          </button>
+
+          <button type="button" class="form-control" style="cursor:pointer; font-weight:700; text-align:center;" onclick="sendViaMobileSMSLink()">
+            📱 Open Phone App / Windows Phone Link SMS
+          </button>
+        </div>
+
+        <button type="button" class="btn-primary" style="background:#475569; margin-top:16px;" onclick="closePCCheckoutModal()">
+          Close & Finish Order
+        </button>
       </div>
     </div>
   </div>
@@ -233,14 +342,14 @@
           <p style="font-size:13px; color:#78350f;">Visit our store in Tabuk City or call/text us directly at <b>0995-531-4145</b> to place your order!</p>
         </div>
         <button id="qvOrderBtn" class="btn-sms-order" style="margin-bottom:10px;">
-          🛒 Add to Cart & Checkout
+          ⚡ Buy Now Direct Checkout
         </button>
         <button class="btn-primary" style="background:#475569;" onclick="closeQuickViewModal()">Close View</button>
       </div>
     </div>
   </div>
 
-  <!-- Seller Login Modal (Secured: Password hint/preview completely removed) -->
+  <!-- Seller Login Modal (Secured) -->
   <div id="sellerLoginModal" class="modal-overlay">
     <div class="modal-box" style="max-width: 400px;">
       <div class="modal-header">
@@ -258,7 +367,7 @@
     </div>
   </div>
 
-  <!-- Seller Tag Management Modal (Add, Edit, Delete Bakery Product Tags) -->
+  <!-- Seller Tag Management Modal -->
   <div id="manageTagsModal" class="modal-overlay">
     <div class="modal-box" style="max-width: 460px;">
       <div class="modal-header">
@@ -283,7 +392,7 @@
     </div>
   </div>
 
-  <!-- Seller Add / Edit Pastry Modal (Includes Bakery Product Tag Setup) -->
+  <!-- Seller Add / Edit Pastry Modal -->
   <div id="pastryFormModal" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
