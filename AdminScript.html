@@ -1,0 +1,376 @@
+<script>
+/************************************************
+ * K'S BAKERY ADMIN SCRIPT
+ * Version 3.0 - Client Side JavaScript
+ ************************************************/
+
+// State variables
+let currentProducts = [];
+let editingProductId = null;
+let productImageBase64 = null;
+let productImageName = null;
+
+let logoBase64 = null;
+let logoFileName = null;
+let bannerBase64 = null;
+let bannerFileName = null;
+
+// Initialize Admin Dashboard on load
+document.addEventListener("DOMContentLoaded", function () {
+  loadProducts();
+  loadSettings();
+  setupImageListeners();
+});
+
+/************************************************
+ * NAVIGATION / SECTIONS
+ ************************************************/
+function showSection(section) {
+  const productsSection = document.getElementById("productsSection");
+  const settingsSection = document.getElementById("settingsSection");
+  const productsTab = document.getElementById("productsTab");
+  const settingsTab = document.getElementById("settingsTab");
+
+  if (section === "products") {
+    productsSection.style.display = "block";
+    settingsSection.style.display = "none";
+    productsTab.classList.add("active");
+    settingsTab.classList.remove("active");
+  } else if (section === "settings") {
+    productsSection.style.display = "none";
+    settingsSection.style.display = "block";
+    productsTab.classList.remove("active");
+    settingsTab.classList.add("active");
+  }
+}
+
+/************************************************
+ * PRODUCTS MANAGEMENT
+ ************************************************/
+
+function loadProducts() {
+  const tableBody = document.getElementById("productTable");
+  tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px;">⏳ Loading products...</td></tr>`;
+
+  google.script.run
+    .withSuccessHandler(onProductsLoaded)
+    .withFailureHandler(onServerError)
+    .getProducts();
+}
+
+function onProductsLoaded(products) {
+  currentProducts = products || [];
+  updateDashboardStats(currentProducts);
+  renderProductsTable(currentProducts);
+}
+
+function updateDashboardStats(products) {
+  const total = products.length;
+  const inStore = products.filter(p => p.category === "In Store").length;
+  const forDelivery = products.filter(p => p.category === "For Delivery").length;
+  const outOfStock = products.filter(p => Number(p.stock) <= 0).length;
+
+  document.getElementById("totalProducts").textContent = total;
+  document.getElementById("instoreCount").textContent = inStore;
+  document.getElementById("deliveryCount").textContent = forDelivery;
+  document.getElementById("outStock").textContent = outOfStock;
+}
+
+function renderProductsTable(products) {
+  const tbody = document.getElementById("productTable");
+  tbody.innerHTML = "";
+
+  if (products.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px;">No products found.</td></tr>`;
+    return;
+  }
+
+  products.forEach(p => {
+    const tr = document.createElement("tr");
+
+    const isAvailable = p.stock > 0;
+    const statusBadge = isAvailable
+      ? `<span class="badge badge-success">In Stock (${p.stock})</span>`
+      : `<span class="badge badge-danger">Out of Stock</span>`;
+
+    const imageTag = `<img src="${p.image}" alt="${escapeHtml(p.name)}" class="table-img" onerror="this.src='https://placehold.co/50x50?text=No+Img'">`;
+
+    tr.innerHTML = `
+      <td>${p.id}</td>
+      <td>${imageTag}</td>
+      <td><strong>${escapeHtml(p.name)}</strong>${p.badge ? ` <span class="tag-badge">${escapeHtml(p.badge)}</span>` : ''}</td>
+      <td>${escapeHtml(p.category)}</td>
+      <td>₱${Number(p.price).toFixed(2)}</td>
+      <td>${p.stock}</td>
+      <td>${statusBadge}</td>
+      <td class="action-buttons">
+        <button class="editBtn" onclick="editProduct(${p.id})">✏ Edit</button>
+        <button class="deleteBtn" onclick="deleteProductConfirm(${p.id})">🗑 Delete</button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+function filterProducts() {
+  const query = document.getElementById("searchProduct").value.toLowerCase().trim();
+  if (!query) {
+    renderProductsTable(currentProducts);
+    return;
+  }
+
+  const filtered = currentProducts.filter(p =>
+    p.name.toLowerCase().includes(query) ||
+    p.category.toLowerCase().includes(query) ||
+    (p.badge && p.badge.toLowerCase().includes(query)) ||
+    String(p.id).includes(query)
+  );
+
+  renderProductsTable(filtered);
+}
+
+/************************************************
+ * ADD / EDIT PRODUCT MODAL
+ ************************************************/
+
+function showAddModal() {
+  editingProductId = null;
+  productImageBase64 = null;
+  productImageName = null;
+
+  document.getElementById("modalTitle").textContent = "Add Product";
+  document.getElementById("productName").value = "";
+  document.getElementById("productCategory").value = "In Store";
+  document.getElementById("productPrice").value = "";
+  document.getElementById("productStock").value = "";
+  document.getElementById("productBadge").value = "";
+  document.getElementById("productDescription").value = "";
+  document.getElementById("imagePreview").src = "https://placehold.co/300x300?text=No+Image";
+  document.getElementById("productImage").value = "";
+
+  document.getElementById("productModal").style.display = "flex";
+}
+
+function editProduct(id) {
+  const product = currentProducts.find(p => String(p.id) === String(id));
+  if (!product) return;
+
+  editingProductId = product.id;
+  productImageBase64 = null;
+  productImageName = null;
+
+  document.getElementById("modalTitle").textContent = "Edit Product #" + product.id;
+  document.getElementById("productName").value = product.name || "";
+  document.getElementById("productCategory").value = product.category || "In Store";
+  document.getElementById("productPrice").value = product.price || 0;
+  document.getElementById("productStock").value = product.stock || 0;
+  document.getElementById("productBadge").value = product.badge || "";
+  document.getElementById("productDescription").value = product.description || "";
+  document.getElementById("imagePreview").src = product.image || "https://placehold.co/300x300?text=No+Image";
+  document.getElementById("productImage").value = "";
+
+  document.getElementById("productModal").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("productModal").style.display = "none";
+}
+
+function previewImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  productImageName = file.name;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    productImageBase64 = e.target.result;
+    document.getElementById("imagePreview").src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveProduct() {
+  const name = document.getElementById("productName").value.trim();
+  const category = document.getElementById("productCategory").value;
+  const price = parseFloat(document.getElementById("productPrice").value);
+  const stock = parseInt(document.getElementById("productStock").value, 10);
+  const badge = document.getElementById("productBadge").value.trim();
+  const description = document.getElementById("productDescription").value.trim();
+
+  if (!name) {
+    alert("Please enter a product name.");
+    return;
+  }
+  if (isNaN(price) || price < 0) {
+    alert("Please enter a valid price.");
+    return;
+  }
+  if (isNaN(stock) || stock < 0) {
+    alert("Please enter a valid stock quantity.");
+    return;
+  }
+
+  const productData = {
+    id: editingProductId,
+    name: name,
+    category: category,
+    price: price,
+    stock: stock,
+    badge: badge,
+    description: description
+  };
+
+  const saveBtn = document.querySelector("#productModal .saveBtn");
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Saving...";
+
+  google.script.run
+    .withSuccessHandler(function (response) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save Product";
+      closeModal();
+      loadProducts();
+    })
+    .withFailureHandler(function (err) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save Product";
+      onServerError(err);
+    })
+    .saveProductWithImage(productData, productImageBase64, productImageName);
+}
+
+function deleteProductConfirm(id) {
+  if (confirm(`Are you sure you want to delete Product #${id}?`)) {
+    google.script.run
+      .withSuccessHandler(function (success) {
+        if (success) {
+          loadProducts();
+        } else {
+          alert("Failed to delete product.");
+        }
+      })
+      .withFailureHandler(onServerError)
+      .deleteProduct(id);
+  }
+}
+
+/************************************************
+ * STORE SETTINGS MANAGEMENT
+ ************************************************/
+
+function loadSettings() {
+  google.script.run
+    .withSuccessHandler(onSettingsLoaded)
+    .withFailureHandler(onServerError)
+    .getStoreSettings();
+}
+
+function onSettingsLoaded(settings) {
+  if (!settings) return;
+  document.getElementById("storeName").value = settings.storeName || "";
+  document.getElementById("storeTagline").value = settings.tagline || "";
+  document.getElementById("storeAddress").value = settings.address || "";
+  document.getElementById("storePhone").value = settings.phone || "";
+  document.getElementById("storeFacebook").value = settings.facebook || "";
+  document.getElementById("storeEmail").value = settings.email || "";
+
+  if (settings.logo) {
+    document.getElementById("logoPreview").src = settings.logo;
+  }
+  if (settings.banner) {
+    document.getElementById("bannerPreview").src = settings.banner;
+  }
+}
+
+function setupImageListeners() {
+  const logoInput = document.getElementById("logoFile");
+  if (logoInput) {
+    logoInput.addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      logoFileName = file.name;
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        logoBase64 = evt.target.result;
+        document.getElementById("logoPreview").src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const bannerInput = document.getElementById("bannerFile");
+  if (bannerInput) {
+    bannerInput.addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      bannerFileName = file.name;
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        bannerBase64 = evt.target.result;
+        document.getElementById("bannerPreview").src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+}
+
+function saveStoreSettings() {
+  const settingsData = {
+    storeName: document.getElementById("storeName").value.trim(),
+    tagline: document.getElementById("storeTagline").value.trim(),
+    address: document.getElementById("storeAddress").value.trim(),
+    phone: document.getElementById("storePhone").value.trim(),
+    facebook: document.getElementById("storeFacebook").value.trim(),
+    email: document.getElementById("storeEmail").value.trim()
+  };
+
+  const saveBtn = document.querySelector("#settingsSection .saveBtn");
+  saveBtn.disabled = true;
+  saveBtn.textContent = "⏳ Saving Settings...";
+
+  google.script.run
+    .withSuccessHandler(function (response) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "💾 Save Store Settings";
+      alert("Store Settings saved successfully!");
+      loadSettings();
+      logoBase64 = null;
+      bannerBase64 = null;
+    })
+    .withFailureHandler(function (err) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "💾 Save Store Settings";
+      onServerError(err);
+    })
+    .saveAllStoreSettings(settingsData, logoBase64, logoFileName, bannerBase64, bannerFileName);
+}
+
+/************************************************
+ * LOGOUT & UTILS
+ ************************************************/
+function logout() {
+  if (confirm("Are you sure you want to logout?")) {
+    google.script.run
+      .withSuccessHandler(function () {
+        window.location.reload();
+      })
+      .logoutUser();
+  }
+}
+
+function onServerError(error) {
+  console.error("Server error:", error);
+  alert("An error occurred: " + (error.message || error));
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+</script>

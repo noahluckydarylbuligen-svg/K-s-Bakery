@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>K's Bakery — Handcrafted Breads & Pastries — The Perfect Everyday Pasalubong!</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair Display:ital,wght@0,600;0,700;0,800;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <?!= include('Style'); ?>
+  <?!= include('AdminStyle'); ?>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav class="top-nav">
+    <div class="nav-container">
+      <a href="#" class="nav-brand">
+        <img src="images/logo.jpg" alt="K's Bakery Logo" class="nav-brand-img" onerror="this.src='https://placehold.co/100?text=K%27s'">
+        <span class="nav-brand-text">K's Bakery</span>
+      </a>
+      <div class="nav-actions">
+        <button class="cart-nav-btn" onclick="openCartModal()">
+          🛒 Cart <span id="cartNavCountBadge" class="cart-badge-count">0</span>
+        </button>
+        <button id="addPastryNavBtn" class="seller-portal-btn" style="display:none; background: #10b981;" onclick="openAddPastryModal()">
+          ➕ Post New Pastry
+        </button>
+        <button id="manageTagsNavBtn" class="seller-portal-btn" style="display:none; background: #6d28d9;" onclick="openManageTagsModal()">
+          🏷️ Manage Bakery Product Tags
+        </button>
+        <button id="sellerPortalBtn" class="seller-portal-btn" onclick="toggleSellerPortal()">
+          🔒 Seller Portal
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Store Open / Closed Status Announcement Banner (Prominently Displayed for Customers) -->
+  <div id="storeStatusBannerContainer"></div>
+
+  <!-- Seller Mode Notification & Control Banner -->
+  <div id="sellerBanner" style="display:none; background: #d97706; color: #ffffff; text-align: center; padding: 10px; font-weight: 700; font-size: 14px;">
+    ⚡ Seller Portal Active: You can now tag store opening status, post new pastries, manage tags, update prices, and edit details!
+  </div>
+
+  <!-- Hero Header Section with Reference Logo & Heading -->
+  <header class="hero-section">
+    <div class="hero-bg-pattern"></div>
+    <div class="hero-container">
+      <div class="hero-content">
+        <h1>Handcrafted Breads & Pastries — The Perfect Everyday Pasalubong!</h1>
+        <div class="hero-slogan">"Umuwing Bida sa Tahanan kasama ang K’s Bakery!"</div>
+        <p>Welcome to K's Bakery! Explore our delicious range of handcrafted pastries available for <b>In Store</b> pickup or <b>Door-to-Door Delivery</b>.</p>
+        <div class="hero-meta">
+          <div class="hero-meta-item">📍 Tabuk City, Kalinga</div>
+          <div class="hero-meta-item">📞 0995-531-4145</div>
+          <div class="hero-meta-item">🕒 Open Daily: 7:00 AM – 7:00 PM</div>
+        </div>
+      </div>
+      <div class="hero-logo-card">
+        <img src="images/logo.jpg" alt="K's Bakery Official Logo" class="hero-logo-img" onerror="this.src='https://placehold.co/400x220?text=K%27s+Bakery'">
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Storefront Section -->
+  <main class="main-container">
+
+    <!-- Seller Store Opening Status Manager (Visible in Seller Mode) -->
+    <div id="sellerStatusManager" class="seller-status-manager" style="display:none;">
+      <div class="seller-status-title">
+        ⚙️ Seller Control: Set Store Opening Announcement Status & Product Tags
+      </div>
+      <div class="seller-status-options">
+        <button id="statusBtnOpen" class="status-opt-btn opt-open" onclick="setStoreStatus('OPEN')">
+          🟢 Open Today
+        </button>
+        <button id="statusBtnClosedToday" class="status-opt-btn opt-closed-today" onclick="setStoreStatus('CLOSED_TODAY')">
+          🔴 Closed Today
+        </button>
+        <button id="statusBtnClosedTomorrow" class="status-opt-btn opt-closed-tomorrow" onclick="setStoreStatus('CLOSED_TOMORROW')">
+          ⚠️ Closed Tomorrow
+        </button>
+        <button id="statusBtnCustom" class="status-opt-btn opt-custom" onclick="promptCustomStatusMessage()">
+          ✏ Custom Announcement
+        </button>
+        <button class="status-opt-btn" style="background:#6d28d9; color:#fff;" onclick="openManageTagsModal()">
+          🏷️ Manage Bakery Product Tags
+        </button>
+      </div>
+    </div>
+
+    <!-- Primary Top Category Filter Bar (Maintained: All Pastries, In Store, For Delivery) -->
+    <div class="category-bar-card">
+      <div class="category-tabs">
+        <button class="tab-btn active" data-category="All" onclick="setCategory('All')">
+          🥐 All Pastries
+        </button>
+        <button class="tab-btn" data-category="In Store" onclick="setCategory('In Store')">
+          🏪 In Store
+        </button>
+        <button class="tab-btn" data-category="For Delivery" onclick="setCategory('For Delivery')">
+          🛵 For Delivery
+        </button>
+      </div>
+
+      <!-- Search Box -->
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search pastries by name or keyword...">
+      </div>
+    </div>
+
+    <!-- Pastry Section Header -->
+    <div class="section-header">
+      <h2 class="section-title">Our Bakery Catalog</h2>
+      <span id="pastryCount" style="font-weight: 700; color: var(--primary-amber); background: #fef3c7; padding: 6px 16px; border-radius: 20px; font-size: 14px;">
+        0 Items
+      </span>
+    </div>
+
+    <!-- Sub-Category Bakery Products Filter Bar (Renamed to 'Bakery Products:') -->
+    <div id="subCategoryBarContainer" class="sub-category-bar">
+      <!-- Rendered dynamically by app.js -->
+    </div>
+
+    <!-- Product Grid (Rattan Pastry Baskets Style Cards) -->
+    <div id="pastryGrid" class="pastry-grid">
+      <!-- Pastry Cards dynamically rendered here -->
+    </div>
+  </main>
+
+  <!-- Shopee-Style Floating Quick Cart Button (Bottom-Right Screen) -->
+  <button id="floatingCartWidget" class="floating-cart-widget" style="display:none;" onclick="openCartModal()">
+    🛒 View Cart (<span id="floatCartCountBadge">0</span>)
+  </button>
+
+  <!-- Footer -->
+  <footer>
+    <div style="max-width: 1240px; margin: 0 auto;">
+      <p style="font-family: 'Playfair Display', serif; font-size: 20px; color: #fbbf24; font-weight: 700;">🍞 K's Bakery</p>
+      <p style="font-style: italic; color: #fde68a; margin-bottom: 8px;">"Umuwing Bida sa Tahanan kasama ang K’s Bakery!"</p>
+      <p>Handcrafted Breads & Pastries — The Perfect Everyday Pasalubong!</p>
+      <p style="margin-top: 16px; font-size: 12px; opacity: 0.7;">© 2026 K's Bakery. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Shopee-Style Customer Cart & Checkout Modal -->
+  <div id="cartModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header" style="background:#ea580c; color:#fff;">
+        <h3>🛒 Shopee-Style Shopping Cart</h3>
+        <button class="modal-close-btn" onclick="closeCartModal()">×</button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Cart Items List Container -->
+        <div id="cartItemsContainer" class="cart-items-list">
+          <!-- Dynamically populated cart item rows -->
+        </div>
+
+        <!-- Total Calculation & Checkout Form -->
+        <form onsubmit="submitCartOrderSMS(event)">
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#451a03; color:#fff; padding:14px 20px; border-radius:14px; margin-bottom:20px;">
+            <span style="font-size:15px; font-weight:700;">Grand Total Amount:</span>
+            <span id="cartTotalAmountText" style="font-size:26px; font-weight:800; color:#fbbf24;">₱0.00</span>
+          </div>
+
+          <div class="form-group">
+            <label>Your Full Name *</label>
+            <input type="text" id="cartCustomerName" class="form-control" placeholder="e.g. Maria Santos" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Mobile Phone Number *</label>
+              <input type="tel" id="cartCustomerPhone" class="form-control" placeholder="09171234567" required>
+            </div>
+            <div class="form-group">
+              <label>Fulfillment Type *</label>
+              <select id="cartFulfillment" class="form-control" required>
+                <option value="Pickup">🏪 In-Store Pickup</option>
+                <option value="Delivery">🛵 Door-to-Door Delivery</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Pickup Time / Delivery Address & Notes</label>
+            <textarea id="cartNote" class="form-control" rows="2" placeholder="e.g. Delivery address or preferred pickup time..."></textarea>
+          </div>
+
+          <button type="submit" id="cartCheckoutBtn" class="btn-sms-order">
+            📱 Checkout & Send Order via SMS Text Message
+          </button>
+          
+          <p style="font-size:12px; color:#78350f; text-align:center; margin-top:10px;">
+            Clicking will format your complete cart order and open your phone's SMS Messages app directly addressed to the seller (<b>0995-531-4145</b>).
+          </p>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Quick View Modal -->
+  <div id="quickViewModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="qvTitle">Pastry Details</h3>
+        <button class="modal-close-btn" onclick="closeQuickViewModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="position: relative; margin-bottom: 16px;">
+          <img id="qvImage" src="" alt="" style="width:100%; height:240px; object-fit:cover; border-radius:12px; border:1px solid var(--border-amber);">
+          <span id="qvCategory" class="category-tag" style="top:12px; left:12px;">Category</span>
+          <span id="qvBadge" class="custom-badge" style="top:12px; right:12px;">Badge</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <span id="qvPrice" style="font-size:28px; font-weight:800; color:var(--primary-amber);">₱0.00</span>
+          <span id="qvAvailability" class="availability-badge avail-in-stock">🟢 In Stock</span>
+        </div>
+        <div style="margin-bottom:20px;">
+          <h4 style="font-size:14px; text-transform:uppercase; color:#78350f; margin-bottom:6px;">Description</h4>
+          <p id="qvDescription" style="font-size:15px; color:#291e14; line-height:1.6;"></p>
+        </div>
+        <div style="background:#fffbeb; padding:16px; border-radius:12px; border:1px solid var(--border-amber); margin-bottom:16px;">
+          <p style="font-weight:700; font-size:13px; color:#451a03; margin-bottom:4px;">📞 How to Order / Inquire:</p>
+          <p style="font-size:13px; color:#78350f;">Visit our store in Tabuk City or call/text us directly at <b>0995-531-4145</b> to place your order!</p>
+        </div>
+        <button id="qvOrderBtn" class="btn-sms-order" style="margin-bottom:10px;">
+          🛒 Add to Cart & Checkout
+        </button>
+        <button class="btn-primary" style="background:#475569;" onclick="closeQuickViewModal()">Close View</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seller Login Modal (Secured: Password hint/preview completely removed) -->
+  <div id="sellerLoginModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3>🔒 Seller Login</h3>
+        <button class="modal-close-btn" onclick="closeSellerLoginModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:14px; color:#78350f; margin-bottom:16px;">Enter password to unlock Seller Portal (Post, Edit & Manage Pastries).</p>
+        <div class="form-group">
+          <label>Seller Password</label>
+          <input type="password" id="sellerPasswordInput" class="form-control" placeholder="Enter seller password" required>
+        </div>
+        <button class="btn-primary" onclick="submitSellerLogin()">Unlock Seller Portal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seller Tag Management Modal (Add, Edit, Delete Bakery Product Tags) -->
+  <div id="manageTagsModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 460px;">
+      <div class="modal-header">
+        <h3>🏷️ Manage Bakery Product Tags</h3>
+        <button class="modal-close-btn" onclick="closeManageTagsModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px; color:#78350f; margin-bottom:14px;">Add, edit, or delete product tags used to categorize pastries below:</p>
+        
+        <div id="manageTagsListContainer" class="tag-manager-list">
+          <!-- Dynamically populated tags list -->
+        </div>
+
+        <form onsubmit="addTagSubmit(event)" style="margin-top:16px; border-top:1px dashed var(--border-amber); padding-top:16px;">
+          <div class="form-group">
+            <label>Add New Bakery Product Tag</label>
+            <input type="text" id="newTagInput" class="form-control" placeholder="e.g. Muffins, Donuts, Pies..." required>
+          </div>
+          <button type="submit" class="btn-primary" style="background:#6d28d9;">➕ Add Product Tag</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seller Add / Edit Pastry Modal (Includes Bakery Product Tag Setup) -->
+  <div id="pastryFormModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modalTitleText">➕ Post New Pastry</h3>
+        <button class="modal-close-btn" onclick="closePastryFormModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="savePastrySubmit(event)">
+          <div class="form-group">
+            <label>Pastry Name *</label>
+            <input type="text" id="pastryFormName" class="form-control" placeholder="e.g. Butter Croissant" required>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Bakery Product Tag *</label>
+              <select id="pastryFormItemType" class="form-control" required>
+                <!-- Populated dynamically from bakeryTags -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Fulfillment Category *</label>
+              <select id="pastryFormCategory" class="form-control" required>
+                <option value="In Store">In Store</option>
+                <option value="For Delivery">For Delivery</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Price (₱) *</label>
+              <input type="number" id="pastryFormPrice" class="form-control" step="0.01" min="0" placeholder="85.00" required>
+            </div>
+            <div class="form-group">
+              <label>Stock Quantity *</label>
+              <input type="number" id="pastryFormStock" class="form-control" min="0" placeholder="10" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Badge Tag (Optional)</label>
+            <input type="text" id="pastryFormBadge" class="form-control" placeholder="e.g. Best Seller">
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="pastryFormDesc" class="form-control" rows="3" placeholder="Describe the ingredients, taste, and freshness..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Item Image</label>
+            <img id="pastryFormImgPreview" class="img-preview-box" src="https://placehold.co/400x300?text=Upload+Image" alt="Preview">
+            <input type="file" id="pastryFormFileInput" class="form-control" accept="image/*" onchange="handleImageUploadPreview(event)">
+          </div>
+
+          <div style="display:flex; gap:12px; margin-top:20px;">
+            <button type="submit" class="btn-primary" style="flex:2;">💾 Save Pastry</button>
+            <button type="button" class="form-control" style="flex:1; cursor:pointer;" onclick="closePastryFormModal()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastNotice" class="toast-notice">Notice</div>
+
+  <script src="app.js"></script>
+</body>
+</html>

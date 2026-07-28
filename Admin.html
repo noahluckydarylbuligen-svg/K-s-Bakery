@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <base target="_top">
+
+    <title>K's Bakery Admin Dashboard</title>
+
+    <?!= include('Style'); ?>
+    <?!= include('AdminStyle'); ?>
+
+</head>
+
+<body class="admin-page">
+
+<div class="admin-wrapper">
+
+    <!-- ===========================
+         HEADER
+    ============================ -->
+
+    <div class="admin-header">
+
+        <div>
+
+            <h1>🍞 K's Bakery Admin Dashboard</h1>
+
+            <p class="subtitle">
+                Manage your bakery products, logo, banner and store information.
+            </p>
+
+        </div>
+
+        <div>
+
+            <button class="logoutBtn" onclick="logout()">
+                Logout
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- ===========================
+         NAVIGATION
+    ============================ -->
+
+    <div class="adminTabs">
+
+        <button
+            id="productsTab"
+            class="active"
+            onclick="showSection('products')">
+
+            📦 Products
+
+        </button>
+
+        <button
+            id="settingsTab"
+            onclick="showSection('settings')">
+
+            ⚙ Store Settings
+
+        </button>
+
+    </div>
+
+    <!-- ===========================
+         PRODUCTS SECTION
+    ============================ -->
+
+    <div
+        id="productsSection"
+        class="section">
+
+        <div class="toolbar">
+
+            <button
+                class="addBtn"
+                onclick="showAddModal()">
+
+                + Add Product
+
+            </button>
+
+            <input
+                id="searchProduct"
+                type="text"
+                placeholder="Search Product..."
+                onkeyup="filterProducts()">
+
+        </div>
+
+        <!-- ======================
+             DASHBOARD STATS
+        ======================= -->
+
+        <div class="stats">
+
+            <div class="cardStat">
+
+                <h2 id="totalProducts">
+
+                    0
+
+                </h2>
+
+                <p>Total Products</p>
+
+            </div>
+
+            <div class="cardStat">
+
+                <h2 id="instoreCount">
+
+                    0
+
+                </h2>
+
+                <p>In Store</p>
+
+            </div>
+
+            <div class="cardStat">
+
+                <h2 id="deliveryCount">
+
+                    0
+
+                </h2>
+
+                <p>For Delivery</p>
+
+            </div>
+
+            <div class="cardStat">
+
+                <h2 id="outStock">
+
+                    0
+
+                </h2>
+
+                <p>Out of Stock</p>
+
+            </div>
+
+        </div>
+
+        <!-- ======================
+             PRODUCTS TABLE
+        ======================= -->
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th>Image</th>
+
+                    <th>Name</th>
+
+                    <th>Category</th>
+
+                    <th>Price</th>
+
+                    <th>Stock</th>
+
+                    <th>Status</th>
+
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="productTable">
+
+            </tbody>
+
+        </table>
+
+    </div>
+        <!-- ===========================
+         STORE SETTINGS
+    ============================ -->
+
+    <div
+        id="settingsSection"
+        class="section"
+        style="display:none;">
+
+        <div class="settings-card">
+
+            <h2>🏪 Store Settings</h2>
+
+            <label>Store Name</label>
+            <input id="storeName" type="text">
+
+            <label>Tagline</label>
+            <input id="storeTagline" type="text">
+
+            <label>Address</label>
+            <input id="storeAddress" type="text">
+
+            <label>Phone</label>
+            <input id="storePhone" type="text">
+
+            <label>Facebook</label>
+            <input id="storeFacebook" type="text">
+
+            <label>Email</label>
+            <input id="storeEmail" type="email">
+
+            <hr>
+
+            <h3>Logo</h3>
+
+            <img
+                id="logoPreview"
+                class="previewImage"
+                src="https://placehold.co/250x120?text=Logo">
+
+            <input
+                id="logoFile"
+                type="file"
+                accept="image/*">
+
+            <hr>
+
+            <h3>Homepage Banner</h3>
+
+            <img
+                id="bannerPreview"
+                class="previewBanner"
+                src="https://placehold.co/600x220?text=Banner">
+
+            <input
+                id="bannerFile"
+                type="file"
+                accept="image/*">
+
+            <br><br>
+
+            <button
+                class="saveBtn"
+                onclick="saveStoreSettings()">
+
+                💾 Save Store Settings
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ======================================
+     ADD / EDIT PRODUCT MODAL
+====================================== -->
+
+<div
+    id="productModal"
+    class="modal">
+
+    <div class="modal-content">
+
+        <h2 id="modalTitle">
+
+            Add Product
+
+        </h2>
+
+        <input
+            id="productName"
+            placeholder="Product Name">
+
+        <select id="productCategory">
+
+            <option>In Store</option>
+
+            <option>For Delivery</option>
+
+        </select>
+
+        <input
+            id="productPrice"
+            type="number"
+            placeholder="Price">
+
+        <input
+            id="productStock"
+            type="number"
+            placeholder="Stock">
+
+        <input
+            id="productBadge"
+            placeholder="Badge (Optional)">
+
+        <textarea
+            id="productDescription"
+            placeholder="Description"></textarea>
+
+        <label><b>Product Image</b></label>
+
+        <img
+            id="imagePreview"
+            class="previewImage"
+            src="https://placehold.co/300x300?text=No+Image">
+
+        <input
+            id="productImage"
+            type="file"
+            accept="image/*"
+            onchange="previewImage(event)">
+
+        <div
+            style="
+                margin-top:25px;
+                display:flex;
+                gap:10px;
+            ">
+
+            <button
+                class="saveBtn"
+                onclick="saveProduct()">
+
+                Save Product
+
+            </button>
+
+            <button
+                class="cancelBtn"
+                onclick="closeModal()">
+
+                Cancel
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<?!= include('AdminScript'); ?>
+
+</body>
+
+</html>
