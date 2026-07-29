@@ -1,6 +1,11 @@
 ﻿/************************************************************
  * K'S BAKERY — MODERN CLIENT APPLICATION LOGIC
- * Features: Symmetrical Grid Cards, Non-Wrapping Bakery Sub-Tags,
+ * Features: "💬 Message Seller" Buttons on Header & Product Cards,
+ * Strict Order Logging (Orders are ONLY logged to Notifications upon successfully sending via Messenger or SMS),
+ * Cleaned Checkout Modal (Removed WhatsApp, Viber/Copy, Windows SMS),
+ * Shopee-Style In-App Live Customer-to-Seller Chatbox,
+ * Free Wi-Fi / Internet Fallback Messenger Direct Link (No SMS Load Needed),
+ * Symmetrical Grid Cards, Non-Wrapping Bakery Sub-Tags,
  * Permanent Cart Retention across browser close/reopen,
  * Notification Unread Counter Reset on Modal Open, Mouth-Watering Micro-Animations,
  * Retained Permanent Order History (Customer Device & Seller Master Log),
@@ -20,6 +25,7 @@ const STORAGE_KEY_READ_NOTIF_SELLER = "KS_BAKERY_READ_NOTIFS_SELL_V1";
 const STORAGE_KEY_TAGS = "KS_BAKERY_PRODUCT_TAGS_V1";
 const STORAGE_KEY_CART = "KS_BAKERY_CART_V3";
 const STORAGE_KEY_DISCOUNTS = "KS_BAKERY_DISCOUNTS_V1";
+const STORAGE_KEY_CHAT_MESSAGES = "KS_BAKERY_CHAT_MESSAGES_V1";
 const DEFAULT_PASSWORD = "KsBakery2026";
 const SELLER_PHONE_NUMBER = "09955314145";
 const SELLER_PHONE_INTL = "+639955314145";
@@ -59,7 +65,7 @@ const ICON_GIFT = "\u{1F381}";
 const ICON_CHART = "\u{1F4CA}";
 const ICON_STAR = "\u2B50";
 
-// Real-Time Broadcast Channel for instant Seller Notifications across tabs
+// Real-Time Broadcast Channel for instant Seller Notifications & Live Chat across tabs
 let orderBroadcastChannel = null;
 if ('BroadcastChannel' in window) {
   orderBroadcastChannel = new BroadcastChannel("KS_BAKERY_ORDERS_CHANNEL_V3");
@@ -78,10 +84,10 @@ const DEFAULT_BAKERY_TAGS = [
 const INITIAL_VOLUME_DISCOUNTS = [
   {
     id: 1,
-    targetPastryId: "ALL", // "ALL" or specific pastryId
+    targetPastryId: "ALL",
     minQty: 5,
-    discountType: "PERCENT", // "PERCENT" or "FIXED"
-    discountValue: 10, // 10% OFF when buying 5 or more items
+    discountType: "PERCENT",
+    discountValue: 10,
     active: true
   }
 ];
@@ -174,6 +180,16 @@ const INITIAL_PASTRIES = [
   }
 ];
 
+// Initial Welcome Message in Chat
+const INITIAL_CHAT_MESSAGES = [
+  {
+    id: 1,
+    sender: "seller",
+    text: "Welcome to K's Bakery! \u{1F950} How can we help you with your order or inquiry today?",
+    time: "Just now"
+  }
+];
+
 // Default Store Status
 const DEFAULT_STORE_STATUS = {
   code: "OPEN",
@@ -182,21 +198,22 @@ const DEFAULT_STORE_STATUS = {
 
 // App State
 let pastries = [];
-let customerOrders = []; // Customer isolated orders on this device
-let masterOrders = []; // Master order log for seller
+let customerOrders = [];
+let masterOrders = [];
 let bakeryTags = [];
-let volumeDiscounts = []; // Seller configurable volume discount rules
-let cart = []; // Shopee-Style Customer Cart items: [{ pastryId, qty }]
-let activeFulfillmentCategory = "All"; // Top category bar: All, In Store, For Delivery
-let activeProductType = "All"; // Bakery Products pills: All, Breads, Cakes, Cookies, Pastries & Tarts, etc.
+let volumeDiscounts = [];
+let chatMessages = [];
+let cart = [];
+let activeFulfillmentCategory = "All";
+let activeProductType = "All";
 let isSellerMode = false;
 let storeStatus = { ...DEFAULT_STORE_STATUS };
 let editingPastryId = null;
 let activeOrderingPastry = null;
 let currentUploadedBase64 = null;
 let currentPreparedOrderText = "";
+let pendingCheckoutPayload = null; // Unconfirmed order waiting for user to click Messenger or SMS!
 
-// Track Read Orders Count to clear badge once opened
 let readCustomerOrdersCount = 0;
 let readSellerOrdersCount = 0;
 
@@ -208,6 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadMasterOrders();
   loadReadNotifCounts();
   loadVolumeDiscounts();
+  loadChatMessages();
   loadCart();
   loadStoreStatus();
   checkSellerSession();
@@ -291,6 +309,118 @@ function loadVolumeDiscounts() {
 
 function saveVolumeDiscountsToStorage() {
   localStorage.setItem(STORAGE_KEY_DISCOUNTS, JSON.stringify(volumeDiscounts));
+}
+
+// SHOPEE-STYLE LIVE CHAT MESSAGES LOGIC
+function loadChatMessages() {
+  const saved = localStorage.getItem(STORAGE_KEY_CHAT_MESSAGES);
+  if (saved) {
+    try { chatMessages = JSON.parse(saved); } catch (e) { chatMessages = [...INITIAL_CHAT_MESSAGES]; }
+  } else {
+    chatMessages = [...INITIAL_CHAT_MESSAGES];
+    saveChatMessagesToStorage();
+  }
+}
+
+function saveChatMessagesToStorage() {
+  localStorage.setItem(STORAGE_KEY_CHAT_MESSAGES, JSON.stringify(chatMessages));
+}
+
+function openShopeeChatModal() {
+  renderShopeeChatMessages();
+  document.getElementById("shopeeChatModal").classList.add("active");
+}
+
+function closeShopeeChatModal() {
+  document.getElementById("shopeeChatModal").classList.remove("active");
+}
+
+function renderShopeeChatMessages() {
+  const container = document.getElementById("chatMessagesContainer");
+  if (!container) return;
+
+  loadChatMessages();
+
+  container.innerHTML = chatMessages.map(msg => {
+    const isCustomer = msg.sender === "customer";
+    const bubbleClass = isCustomer ? "chat-customer" : "chat-seller";
+    const senderName = isCustomer ? "You" : "Mary Grace (Seller)";
+
+    return `
+      <div class="chat-bubble ${bubbleClass}">
+        <div style="font-size:11px; font-weight:800; opacity:0.85; margin-bottom:2px;">${senderName}</div>
+        <div>${escapeHtml(msg.text).replace(/\n/g, '<br>')}</div>
+        <div class="chat-time">${msg.time}</div>
+      </div>
+    `;
+  }).join('');
+
+  container.scrollTop = container.scrollHeight;
+}
+
+function sendQuickChatMessage(text) {
+  addChatMessage("customer", text);
+}
+
+function sendCartSummaryToChat() {
+  if (cart.length === 0) {
+    alert("Your cart is currently empty. Add pastries to cart first!");
+    return;
+  }
+
+  const cartDisc = calculateCartVolumeDiscount();
+  let summary = `${ICON_BREAD} MY CART ORDER INQUIRY:\n`;
+  cart.forEach((item, i) => {
+    const p = pastries.find(x => String(x.id) === String(item.pastryId));
+    if (p) {
+      summary += `${i + 1}. ${p.name} (${item.qty}x) = ${PESO}${(p.price * item.qty).toFixed(2)}\n`;
+    }
+  });
+
+  if (cartDisc.isApplied && cartDisc.totalDiscount > 0) {
+    summary += `Volume Discount: -${PESO}${cartDisc.totalDiscount.toFixed(2)}\n`;
+  }
+  summary += `TOTAL AMOUNT: ${PESO}${cartDisc.finalTotal.toFixed(2)}`;
+
+  addChatMessage("customer", summary);
+}
+
+function submitCustomerChatMessage(event) {
+  event.preventDefault();
+  const input = document.getElementById("chatInputText");
+  const text = input ? input.value.trim() : "";
+  if (!text) return;
+
+  addChatMessage("customer", text);
+  input.value = "";
+}
+
+function addChatMessage(sender, text) {
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const newMsg = {
+    id: Date.now(),
+    sender: sender,
+    text: text,
+    time: timeStr
+  };
+
+  chatMessages.push(newMsg);
+  saveChatMessagesToStorage();
+  renderShopeeChatMessages();
+
+  if (sender === "customer") {
+    setTimeout(() => {
+      const autoReplyText = "Thank you for your message! \u{1F389} Mary Grace has received your inquiry. For instant 1-click response, you can also tap the Messenger button above!";
+      chatMessages.push({
+        id: Date.now() + 1,
+        sender: "seller",
+        text: autoReplyText,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      saveChatMessagesToStorage();
+      renderShopeeChatMessages();
+    }, 1000);
+  }
 }
 
 // PERMANENT CART RETENTION LOGIC
@@ -504,7 +634,6 @@ function calculateCartVolumeDiscount() {
   const totalItemsCount = getCartTotalCount();
   const rawSubtotal = getCartTotalPrice();
 
-  // Check if there is an "ALL" rule or item-specific rules
   const allRule = volumeDiscounts.find(d => d.active && (d.targetPastryId === "ALL" || d.targetPastryId === "all"));
   
   let totalDiscount = 0;
@@ -527,7 +656,6 @@ function calculateCartVolumeDiscount() {
       discountSummaryText = `Buy ${neededForDiscount} more item(s) to unlock ${allRule.discountValue}${allRule.discountType === 'PERCENT' ? '%' : PESO} OFF!`;
     }
   } else {
-    // Check item specific rules inside cart
     cart.forEach(item => {
       const pastry = pastries.find(p => String(p.id) === String(item.pastryId));
       if (pastry) {
@@ -551,7 +679,7 @@ function calculateCartVolumeDiscount() {
   };
 }
 
-// Facebook-Style Notification Center Logic (Badge clears when opened, reappears on new order)
+// Facebook-Style Notification Center Logic
 function renderNotificationBadge() {
   const badgeEl = document.getElementById("notifNavBadgeCount");
   if (!badgeEl) return;
@@ -580,7 +708,6 @@ function renderNotificationBadge() {
 }
 
 function openNotificationModal() {
-  // Mark all current notifications as READ so badge clears until new order arrives!
   loadMasterOrders();
   loadCustomerOrders();
 
@@ -663,21 +790,19 @@ function renderNotificationDrawer() {
     }).join('');
 
   } else {
-    // Customer Mode: Isolated Device Order History (Permanently Retained)
     if (titleEl) titleEl.textContent = `${ICON_BELL} My Order History & Notifications (${customerOrders.length})`;
     if (customerOrders.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; padding: 40px 20px; color: #78350f;">
           <span style="font-size: 40px; display: block; margin-bottom: 8px;">${ICON_BAG}</span>
           <h4 style="font-family: 'Playfair Display', serif; font-size: 18px;">No Past Orders Yet</h4>
-          <p style="font-size: 13px; margin-top: 4px;">Orders you place will be logged here on your screen for quick tracking!</p>
+          <p style="font-size: 13px; margin-top: 4px;">Orders you send via Messenger or SMS will log here on your screen!</p>
         </div>
       `;
       return;
     }
 
     container.innerHTML = customerOrders.map(order => {
-      // Find updated status from masterOrders if available
       const masterRecord = masterOrders.find(m => m.id === order.id);
       const currentStatus = masterRecord ? masterRecord.status : (order.status || "Pending");
 
@@ -723,7 +848,6 @@ function updateOrderStatusBySeller(orderId, newStatus) {
     masterOrders[masterIndex].status = newStatus;
     saveMasterOrdersToStorage();
 
-    // Broadcast status change across open tabs
     if (orderBroadcastChannel) {
       orderBroadcastChannel.postMessage({ type: "STATUS_UPDATE", orderId, newStatus });
     }
@@ -787,7 +911,6 @@ function renderVolumeDiscountRulesList() {
   const targetSelect = document.getElementById("discountRuleTargetSelect");
   if (!container) return;
 
-  // Populate Target Select
   if (targetSelect) {
     targetSelect.innerHTML = `
       <option value="ALL">🥐 All Bakery Pastries</option>
@@ -991,7 +1114,6 @@ function renderCartDrawer() {
 
   container.innerHTML = cartItemsHtml;
 
-  // Calculate Volume Discounts
   const cartDisc = calculateCartVolumeDiscount();
 
   if (discountDisplayEl) {
@@ -1074,6 +1196,7 @@ function updateOrderTotalPrice() {
   if (totalEl) totalEl.textContent = `${PESO}${finalTotal.toFixed(2)}`;
 }
 
+// 1. Submit Single Order Form -> Prepares Order (DOES NOT LOG TO NOTIFICATIONS YET!)
 function submitCustomerSingleOrder(event) {
   event.preventDefault();
 
@@ -1125,38 +1248,18 @@ function submitCustomerSingleOrder(event) {
     status: "Pending"
   };
 
-  // 1. ALWAYS Save to Customer isolated LocalStorage
-  loadCustomerOrders();
-  customerOrders.unshift(newOrderRecord);
-  saveCustomerOrdersToStorage();
+  pendingCheckoutPayload = {
+    orderRecord: newOrderRecord,
+    orderText: smsBody,
+    totalAmount: totalAmount,
+    isCart: false
+  };
 
-  // 2. ALWAYS Save to Seller Master LocalStorage
-  loadMasterOrders();
-  masterOrders.unshift(newOrderRecord);
-  saveMasterOrdersToStorage();
-
-  // 3. Broadcast real-time order notification across open tabs
-  if (orderBroadcastChannel) {
-    orderBroadcastChannel.postMessage({ type: "NEW_ORDER", order: newOrderRecord });
-  }
-
-  renderNotificationBadge();
-
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  
-  if (isMobile) {
-    const encodedSms = encodeURIComponent(smsBody);
-    const smsUrl = `sms:${SELLER_PHONE_NUMBER}?body=${encodedSms}`;
-    closeOrderModal();
-    window.location.href = smsUrl;
-  } else {
-    copyOrderToClipboardSilently(smsBody);
-    closeOrderModal();
-    openPCCheckoutModal(smsBody, totalAmount);
-  }
+  closeOrderModal();
+  openPCCheckoutModal(smsBody, totalAmount);
 }
 
-// Multi-Item Cart Checkout Function
+// 2. Submit Multi-Item Cart Form -> Prepares Order (DOES NOT LOG TO NOTIFICATIONS YET!)
 function submitCartOrderSMS(event) {
   event.preventDefault();
 
@@ -1219,44 +1322,45 @@ function submitCartOrderSMS(event) {
     status: "Pending"
   };
 
-  // 1. ALWAYS Save to Customer isolated LocalStorage
+  pendingCheckoutPayload = {
+    orderRecord: newOrderRecord,
+    orderText: smsBody,
+    totalAmount: totalAmount,
+    isCart: true
+  };
+
+  closeCartModal();
+  openPCCheckoutModal(smsBody, totalAmount);
+}
+
+// STRICT COMMIT ORDER FUNCTION (Only called when user actually clicks Messenger or SMS!)
+function commitPendingOrderToNotifications() {
+  if (!pendingCheckoutPayload || !pendingCheckoutPayload.orderRecord) return;
+
+  const record = pendingCheckoutPayload.orderRecord;
+
+  // 1. Save to Customer isolated LocalStorage
   loadCustomerOrders();
-  customerOrders.unshift(newOrderRecord);
+  customerOrders.unshift(record);
   saveCustomerOrdersToStorage();
 
-  // 2. ALWAYS Save to Seller Master LocalStorage
+  // 2. Save to Seller Master LocalStorage
   loadMasterOrders();
-  masterOrders.unshift(newOrderRecord);
+  masterOrders.unshift(record);
   saveMasterOrdersToStorage();
 
   // 3. Broadcast real-time order notification across open tabs
   if (orderBroadcastChannel) {
-    orderBroadcastChannel.postMessage({ type: "NEW_ORDER", order: newOrderRecord });
+    orderBroadcastChannel.postMessage({ type: "NEW_ORDER", order: record });
+  }
+
+  // 4. Clear cart if cart order
+  if (pendingCheckoutPayload.isCart) {
+    clearCart();
   }
 
   renderNotificationBadge();
-
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  
-  if (isMobile) {
-    const encodedSms = encodeURIComponent(smsBody);
-    const smsUrl = `sms:${SELLER_PHONE_NUMBER}?body=${encodedSms}`;
-    clearCart();
-    closeCartModal();
-    window.location.href = smsUrl;
-  } else {
-    copyOrderToClipboardSilently(smsBody);
-    closeCartModal();
-    openPCCheckoutModal(smsBody, totalAmount);
-  }
-}
-
-function copyOrderToClipboardSilently(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => {
-      showToast(`${ICON_CLIPBOARD} Order text automatically copied to clipboard!`);
-    }).catch(() => {});
-  }
+  showToast(`${ICON_BELL} Order #${record.id} logged into Notifications!`);
 }
 
 function openPCCheckoutModal(orderText, totalAmount) {
@@ -1272,8 +1376,49 @@ function openPCCheckoutModal(orderText, totalAmount) {
 
 function closePCCheckoutModal() {
   document.getElementById("pcCheckoutModal").classList.remove("active");
-  clearCart();
+  pendingCheckoutPayload = null;
+}
+
+/**
+ * ⚡ CONFIRM & SEND VIA MESSENGER (Mary Grace Baduyen Buligen)
+ */
+function confirmAndSendViaMessenger() {
+  const previewArea = document.getElementById("pcOrderTextPreview");
+  const orderText = previewArea ? previewArea.value : currentPreparedOrderText;
+  
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(orderText);
+  }
+
+  // COMMIT ORDER TO NOTIFICATIONS
+  commitPendingOrderToNotifications();
+
+  alert("Order text copied! Paste it (Ctrl + V) in Mary Grace Baduyen Buligen's Messenger chat to complete your order.");
+  window.open(`https://m.me/${SELLER_MESSENGER_HANDLE}`, "_blank");
+
+  document.getElementById("pcCheckoutModal").classList.remove("active");
+  pendingCheckoutPayload = null;
   renderApp();
+}
+
+/**
+ * 📱 CONFIRM & SEND VIA SMS TEXT MESSAGE
+ */
+function confirmAndSendViaSMS() {
+  const previewArea = document.getElementById("pcOrderTextPreview");
+  const orderText = previewArea ? previewArea.value : currentPreparedOrderText;
+
+  // COMMIT ORDER TO NOTIFICATIONS
+  commitPendingOrderToNotifications();
+
+  const encodedSms = encodeURIComponent(orderText);
+  const smsUrl = `sms:${SELLER_PHONE_NUMBER}?body=${encodedSms}`;
+
+  document.getElementById("pcCheckoutModal").classList.remove("active");
+  pendingCheckoutPayload = null;
+  renderApp();
+
+  window.location.href = smsUrl;
 }
 
 /**
@@ -1283,40 +1428,11 @@ function openMessenger() {
   const previewArea = document.getElementById("pcOrderTextPreview");
   const orderText = previewArea ? previewArea.value : currentPreparedOrderText;
   
-  if (navigator.clipboard && navigator.clipboard.writeText) {
+  if (orderText && navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(orderText);
   }
 
-  alert("Order copied to clipboard! Paste it (Ctrl + V) into Mary Grace Baduyen Buligen's Messenger chat.");
   window.open(`https://m.me/${SELLER_MESSENGER_HANDLE}`, "_blank");
-}
-
-function sendViaWhatsAppWeb() {
-  if (!currentPreparedOrderText) return;
-  const encoded = encodeURIComponent(currentPreparedOrderText);
-  const waUrl = `https://web.whatsapp.com/send?phone=63${SELLER_PHONE_NUMBER.substring(1)}&text=${encoded}`;
-  window.open(waUrl, "_blank");
-}
-
-function copyOrderTextBtnClick() {
-  if (!currentPreparedOrderText) return;
-  navigator.clipboard.writeText(currentPreparedOrderText).then(() => {
-    alert("\u2705 Order text copied to clipboard!\n\nYou can now paste (Ctrl+V) this order directly into Messenger, Viber, SMS, or Email to send to the seller (Mary Grace Baduyen Buligen).");
-  }).catch(() => {
-    const textarea = document.getElementById("pcOrderTextPreview");
-    if (textarea) {
-      textarea.select();
-      document.execCommand("copy");
-      alert("\u2705 Order text copied!");
-    }
-  });
-}
-
-function sendViaMobileSMSLink() {
-  if (!currentPreparedOrderText) return;
-  const encoded = encodeURIComponent(currentPreparedOrderText);
-  const smsUrl = `sms:${SELLER_PHONE_INTL}?body=${encoded}`;
-  window.location.href = smsUrl;
 }
 
 // Dual Filtering Logic
@@ -1360,7 +1476,6 @@ function renderPastriesGrid() {
     const availClass = isAvailable ? "avail-in-stock" : "avail-out-stock";
     const availText = isAvailable ? `${ICON_GREEN} In Stock (${p.stock})` : (storeStatus.code === "CLOSED_TODAY" ? `${ICON_RED} Store Closed` : `${ICON_RED} Sold Out`);
     
-    // Sub-Tag Badge Pill with inline non-wrapping class
     const subTagHtml = p.itemType ? `<span class="sub-tag-pill-inline">${escapeHtml(p.itemType)}</span>` : '';
 
     const discRule = getVolumeDiscountRuleForPastry(p.id);
@@ -1408,6 +1523,9 @@ function renderPastriesGrid() {
             </button>
             <button class="btn-add-cart" onclick="addToCart(${p.id})">
               ${ICON_CART} Add to Cart
+            </button>
+            <button class="btn-message-seller-card" onclick="openMessenger()">
+              ${ICON_CHAT} Message Seller
             </button>
             <button class="btn-view-details" onclick="openQuickViewModal(${p.id})">
               ${ICON_EYE} Details
@@ -1829,11 +1947,9 @@ function setupEventListeners() {
   document.getElementById("searchInput")?.addEventListener("input", renderPastriesGrid);
   document.getElementById("pastryFormUrlInput")?.addEventListener("input", handleImageUrlPreview);
 
-  // Guarantee Cart is Saved when Tab/Window closes or navigates away!
   window.addEventListener("beforeunload", () => saveCartToStorage());
   window.addEventListener("pagehide", () => saveCartToStorage());
 
-  // Real-Time Storage Listener across browser windows & tabs
   window.addEventListener("storage", (e) => {
     if (e.key === STORAGE_KEY_MASTER_ORDERS || e.key === STORAGE_KEY_CUSTOMER_ORDERS) {
       loadMasterOrders();
@@ -1853,9 +1969,14 @@ function setupEventListeners() {
         renderCartDrawer();
       }
     }
+    if (e.key === STORAGE_KEY_CHAT_MESSAGES) {
+      loadChatMessages();
+      if (document.getElementById("shopeeChatModal")?.classList.contains("active")) {
+        renderShopeeChatMessages();
+      }
+    }
   });
 
-  // Real-Time BroadcastChannel Listener for open tabs
   if (orderBroadcastChannel) {
     orderBroadcastChannel.onmessage = (event) => {
       if (event.data && (event.data.type === "NEW_ORDER" || event.data.type === "STATUS_UPDATE")) {

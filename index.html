@@ -23,6 +23,9 @@
         <span class="nav-brand-text">K's Bakery</span>
       </a>
       <div class="nav-actions">
+        <button class="msg-seller-nav-btn" onclick="openMessenger()" title="Message Mary Grace Baduyen Buligen directly on Messenger">
+          &#128172; Message Seller
+        </button>
         <button class="notif-nav-btn" onclick="openNotificationModal()" title="Order Notifications &amp; Log">
           &#128276; Notifications <span id="notifNavBadgeCount" class="notif-badge-count" style="display:none;">0</span>
         </button>
@@ -143,10 +146,15 @@
     </div>
   </main>
 
-  <!-- Shopee-Style Floating Quick Cart Button (Bottom-Right Screen) -->
-  <button id="floatingCartWidget" class="floating-cart-widget" style="display:none;" onclick="openCartModal()">
-    &#128722; View Cart (<span id="floatCartCountBadge">0</span>)
-  </button>
+  <!-- Shopee-Style Floating Quick Widgets Group (Chat & Cart) -->
+  <div class="floating-widgets-group">
+    <button id="floatingChatWidget" class="floating-chat-widget" onclick="openShopeeChatModal()">
+      &#128172; Chat with Seller
+    </button>
+    <button id="floatingCartWidget" class="floating-cart-widget" style="display:none;" onclick="openCartModal()">
+      &#128722; View Cart (<span id="floatCartCountBadge">0</span>)
+    </button>
+  </div>
 
   <!-- Footer -->
   <footer>
@@ -157,6 +165,56 @@
       <p style="margin-top: 16px; font-size: 12px; opacity: 0.7;">&copy; 2026 K's Bakery. All rights reserved.</p>
     </div>
   </footer>
+
+  <!-- Shopee-Style Live Customer-to-Seller In-App Chat Modal -->
+  <div id="shopeeChatModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff;">
+        <div>
+          <h3 style="font-size:18px; margin-bottom:2px;">&#128172; Live Bakery Chat &amp; Orders</h3>
+          <span style="font-size:12px; color:#bfdbfe; font-weight:600;">Mary Grace Baduyen Buligen &bull; &#128994; Online (Free Wi-Fi Chat)</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeShopeeChatModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Internet / No SMS Load Callout Banner -->
+        <div style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; padding:10px 14px; border-radius:12px; font-size:12px; font-weight:700; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+          <span>&#128246; No SMS Load? Send orders via Free Wi-Fi Chat or Messenger!</span>
+          <button type="button" style="background:#0084ff; color:#fff; border:none; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;" onclick="openMessenger()">
+            &#9889; Messenger
+          </button>
+        </div>
+
+        <!-- Quick Reply Chips -->
+        <div class="chat-quick-replies">
+          <button type="button" class="quick-reply-chip" onclick="sendQuickChatMessage('Hi! Is Pandecoco available right now?')">
+            &#129360; Pandecoco stock?
+          </button>
+          <button type="button" class="quick-reply-chip" onclick="sendQuickChatMessage('How much is door-to-door delivery in Tabuk City?')">
+            &#128757; Delivery fee?
+          </button>
+          <button type="button" class="quick-reply-chip" onclick="sendCartSummaryToChat()">
+            &#128722; Send My Cart Order Here
+          </button>
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div id="chatMessagesContainer" class="chat-messages-container">
+          <!-- Dynamically populated chat messages -->
+        </div>
+
+        <!-- Chat Input Form -->
+        <form onsubmit="submitCustomerChatMessage(event)" style="display:flex; gap:8px;">
+          <input type="text" id="chatInputText" class="form-control" placeholder="Type your message or order inquiry here..." required style="flex-grow:1;">
+          <button type="submit" class="btn-primary" style="width:auto; padding:0 20px; background:#2563eb; min-height:44px;">
+            Send
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </div>
 
   <!-- Seller Sales Analytics & Volume Discount Rule Manager Modal -->
   <div id="analyticsDiscountModal" class="modal-overlay">
@@ -304,11 +362,11 @@
           </div>
 
           <button type="submit" class="btn-sms-order">
-            &#128241; Checkout Direct Order
+            &#9889; Continue to Send Order
           </button>
           
           <p style="font-size:12px; color:#78350f; text-align:center; margin-top:10px;">
-            Formats order and connects directly via Messenger to Mary Grace Baduyen Buligen!
+            Order will be recorded into Notifications once sent via Messenger or SMS!
           </p>
         </form>
       </div>
@@ -364,11 +422,11 @@
           </div>
 
           <button type="submit" id="cartCheckoutBtn" class="btn-sms-order">
-            &#128241; Checkout &amp; Send Order Message
+            &#9889; Continue to Send Order
           </button>
           
           <p style="font-size:12px; color:#78350f; text-align:center; margin-top:10px;">
-            Works seamlessly on Mobile Phones &amp; Desktop PCs via Messenger (Mary Grace Baduyen Buligen), WhatsApp Web, and SMS!
+            Order will be recorded into Notifications once sent via Messenger or SMS!
           </p>
         </form>
 
@@ -376,44 +434,36 @@
     </div>
   </div>
 
-  <!-- PC Desktop Checkout Modal (Direct Messenger Link to Mary Grace Baduyen Buligen) -->
+  <!-- Final Send Confirmation Modal (Cleaned: Unwanted buttons removed!) -->
   <div id="pcCheckoutModal" class="modal-overlay">
     <div class="modal-box" style="max-width: 480px;">
       <div class="modal-header" style="background:#16a34a; color:#fff;">
-        <h3>&check; Order Ready to Send!</h3>
+        <h3>&check; Send Order to Seller</h3>
         <button class="modal-close-btn" onclick="closePCCheckoutModal()">&times;</button>
       </div>
       <div class="modal-body">
         <p style="font-size:14px; color:#291e14; margin-bottom:12px;">
-          Your order total is <b id="pcOrderTotalDisplay" style="color:#d97706; font-size:18px;">&#8369;0.00</b>. Choose your preferred messaging app to send your order to the seller (<b>0995-531-4145</b>):
+          Your order total is <b id="pcOrderTotalDisplay" style="color:#d97706; font-size:18px;">&#8369;0.00</b>. Click below to send your order to the seller (<b>0995-531-4145</b>). Your order will be logged in Notifications upon sending:
         </p>
 
         <!-- Formatted Text Area Preview -->
         <div class="form-group">
-          <label>Formatted Order Text (Auto-Copied)</label>
+          <label>Formatted Order Message (Auto-Copied)</label>
           <textarea id="pcOrderTextPreview" class="form-control" rows="6" readonly style="font-family: monospace; font-size: 12px; background: #fffbeb;"></textarea>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
-          <button type="button" class="btn-sms-order" style="background:#0084ff; color:#fff;" onclick="openMessenger()">
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
+          <button type="button" class="btn-sms-order" style="background:#0084ff; color:#fff; font-size:15px;" onclick="confirmAndSendViaMessenger()">
             &#9889; Send via Facebook Messenger (Mary Grace Baduyen Buligen)
           </button>
 
-          <button type="button" class="btn-sms-order" style="background:#25d366; color:#fff;" onclick="sendViaWhatsAppWeb()">
-            &#128172; Send via WhatsApp Web
-          </button>
-          
-          <button type="button" class="btn-primary" style="background:#6d28d9;" onclick="copyOrderTextBtnClick()">
-            &#128203; Copy Order Text (For Viber / Email)
-          </button>
-
-          <button type="button" class="form-control" style="cursor:pointer; font-weight:700; text-align:center;" onclick="sendViaMobileSMSLink()">
-            &#128241; Open Phone App / Windows Phone Link SMS
+          <button type="button" class="btn-sms-order" style="background:#16a34a; color:#fff; font-size:15px;" onclick="confirmAndSendViaSMS()">
+            &#128241; Send via SMS Text Message (0995-531-4145)
           </button>
         </div>
 
-        <button type="button" class="btn-primary" style="background:#475569; margin-top:16px;" onclick="closePCCheckoutModal()">
-          Close &amp; Finish Order
+        <button type="button" class="btn-primary" style="background:#64748b; margin-top:16px;" onclick="closePCCheckoutModal()">
+          Cancel &amp; Close
         </button>
       </div>
     </div>
@@ -444,10 +494,15 @@
           <p style="font-weight:700; font-size:13px; color:#451a03; margin-bottom:4px;">&#128222; How to Order / Inquire:</p>
           <p style="font-size:13px; color:#78350f;">Visit our store in Tabuk City or call/text us directly at <b>0995-531-4145</b> to place your order!</p>
         </div>
-        <button id="qvOrderBtn" class="btn-sms-order" style="margin-bottom:10px;">
-          &#9889; Buy Now Direct Checkout
-        </button>
-        <button class="btn-primary" style="background:#475569;" onclick="closeQuickViewModal()">Close View</button>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button id="qvOrderBtn" class="btn-sms-order">
+            &#9889; Buy Now Direct Checkout
+          </button>
+          <button type="button" class="btn-message-seller-card" onclick="openMessenger()">
+            &#128172; Message Seller on Messenger
+          </button>
+          <button class="btn-primary" style="background:#475569;" onclick="closeQuickViewModal()">Close View</button>
+        </div>
       </div>
     </div>
   </div>
