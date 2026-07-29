@@ -4,7 +4,7 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>K's Bakery â€” Handcrafted Breads & Pastries â€” The Perfect Everyday Pasalubong!</title>
+  <title>K's Bakery &mdash; Handcrafted Breads &amp; Pastries &mdash; The Perfect Everyday Pasalubong!</title>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,17 +23,23 @@
         <span class="nav-brand-text">K's Bakery</span>
       </a>
       <div class="nav-actions">
+        <button class="notif-nav-btn" onclick="openNotificationModal()" title="Order Notifications &amp; Log">
+          &#128276; Notifications <span id="notifNavBadgeCount" class="notif-badge-count" style="display:none;">0</span>
+        </button>
         <button class="cart-nav-btn" onclick="openCartModal()">
-          ðŸ›’ Cart <span id="cartNavCountBadge" class="cart-badge-count">0</span>
+          &#128722; Cart <span id="cartNavCountBadge" class="cart-badge-count">0</span>
         </button>
         <button id="addPastryNavBtn" class="seller-portal-btn" style="display:none; background: #10b981;" onclick="openAddPastryModal()">
-          âž• Post New Pastry
+          &#10133; Post New Pastry
         </button>
         <button id="manageTagsNavBtn" class="seller-portal-btn" style="display:none; background: #6d28d9;" onclick="openManageTagsModal()">
-          ðŸ·ï¸ Manage Bakery Product Tags
+          &#127991;&#65039; Manage Bakery Product Tags
+        </button>
+        <button id="sellerAnalyticsNavBtn" class="seller-portal-btn" style="display:none; background: #0284c7;" onclick="openAnalyticsDiscountModal()">
+          &#128202; Sales Analytics &amp; Discounts
         </button>
         <button id="sellerPortalBtn" class="seller-portal-btn" onclick="toggleSellerPortal()">
-          ðŸ”’ Seller Portal
+          &#128274; Seller Portal
         </button>
       </div>
     </div>
@@ -44,7 +50,7 @@
 
   <!-- Seller Mode Notification & Control Banner -->
   <div id="sellerBanner" style="display:none; background: #d97706; color: #ffffff; text-align: center; padding: 10px; font-weight: 700; font-size: 14px;">
-    âš¡ Seller Portal Active: You can now tag store opening status, post new pastries, manage tags, update prices, and edit details!
+    &#9889; Seller Portal Active: You can now tag store opening status, post new pastries, manage tags, update prices, configure volume discounts, and edit details!
   </div>
 
   <!-- Hero Header Section with Reference Logo & Heading -->
@@ -52,13 +58,13 @@
     <div class="hero-bg-pattern"></div>
     <div class="hero-container">
       <div class="hero-content">
-        <h1>Handcrafted Breads & Pastries â€” The Perfect Everyday Pasalubong!</h1>
-        <div class="hero-slogan">"Umuwing Bida sa Tahanan kasama ang Kâ€™s Bakery!"</div>
+        <h1>Handcrafted Breads &amp; Pastries &mdash; The Perfect Everyday Pasalubong!</h1>
+        <div class="hero-slogan">&ldquo;Umuwing Bida sa Tahanan kasama ang K&rsquo;s Bakery!&rdquo;</div>
         <p>Welcome to K's Bakery! Explore our delicious range of handcrafted pastries available for <b>In Store</b> pickup or <b>Door-to-Door Delivery</b>.</p>
         <div class="hero-meta">
-          <div class="hero-meta-item">ðŸ“ Tabuk City, Kalinga</div>
-          <div class="hero-meta-item">ðŸ“ž 0995-531-4145</div>
-          <div class="hero-meta-item">ðŸ•’ Open Daily: 7:00 AM â€“ 7:00 PM</div>
+          <div class="hero-meta-item">&#128204; Tabuk City, Kalinga</div>
+          <div class="hero-meta-item">&#128222; 0995-531-4145</div>
+          <div class="hero-meta-item">&#128338; Open Daily: 7:00 AM &ndash; 7:00 PM</div>
         </div>
       </div>
       <div class="hero-logo-card">
@@ -73,23 +79,26 @@
     <!-- Seller Store Opening Status Manager (Visible in Seller Mode) -->
     <div id="sellerStatusManager" class="seller-status-manager" style="display:none;">
       <div class="seller-status-title">
-        âš™ï¸ Seller Control: Set Store Opening Announcement Status & Product Tags
+        &#9881;&#65039; Seller Control: Set Store Opening Announcement Status &amp; Product Tags
       </div>
       <div class="seller-status-options">
         <button id="statusBtnOpen" class="status-opt-btn opt-open" onclick="setStoreStatus('OPEN')">
-          ðŸŸ¢ Open Today
+          &#128994; Open Today
         </button>
         <button id="statusBtnClosedToday" class="status-opt-btn opt-closed-today" onclick="setStoreStatus('CLOSED_TODAY')">
-          ðŸ”´ Closed Today
+          &#128308; Closed Today
         </button>
         <button id="statusBtnClosedTomorrow" class="status-opt-btn opt-closed-tomorrow" onclick="setStoreStatus('CLOSED_TOMORROW')">
-          âš ï¸ Closed Tomorrow
+          &#9888;&#65039; Closed Tomorrow
         </button>
         <button id="statusBtnCustom" class="status-opt-btn opt-custom" onclick="promptCustomStatusMessage()">
-          âœ Custom Announcement
+          &#9999;&#65039; Custom Announcement
         </button>
         <button class="status-opt-btn" style="background:#6d28d9; color:#fff;" onclick="openManageTagsModal()">
-          ðŸ·ï¸ Manage Bakery Product Tags
+          &#127991;&#65039; Manage Bakery Product Tags
+        </button>
+        <button class="status-opt-btn" style="background:#0284c7; color:#fff;" onclick="openAnalyticsDiscountModal()">
+          &#128202; Sales Analytics &amp; Discounts
         </button>
       </div>
     </div>
@@ -98,19 +107,19 @@
     <div class="category-bar-card">
       <div class="category-tabs">
         <button class="tab-btn active" data-category="All" onclick="setCategory('All')">
-          ðŸ¥ All Pastries
+          &#129360; All Pastries
         </button>
         <button class="tab-btn" data-category="In Store" onclick="setCategory('In Store')">
-          ðŸª In Store
+          &#127978; In Store
         </button>
         <button class="tab-btn" data-category="For Delivery" onclick="setCategory('For Delivery')">
-          ðŸ›µ For Delivery
+          &#128757; For Delivery
         </button>
       </div>
 
       <!-- Search Box -->
       <div class="search-box">
-        <span class="search-icon">ðŸ”</span>
+        <span class="search-icon">&#128269;</span>
         <input type="text" id="searchInput" class="search-input" placeholder="Search pastries by name or keyword...">
       </div>
     </div>
@@ -136,25 +145,113 @@
 
   <!-- Shopee-Style Floating Quick Cart Button (Bottom-Right Screen) -->
   <button id="floatingCartWidget" class="floating-cart-widget" style="display:none;" onclick="openCartModal()">
-    ðŸ›’ View Cart (<span id="floatCartCountBadge">0</span>)
+    &#128722; View Cart (<span id="floatCartCountBadge">0</span>)
   </button>
 
   <!-- Footer -->
   <footer>
     <div style="max-width: 1240px; margin: 0 auto;">
-      <p style="font-family: 'Playfair Display', serif; font-size: 20px; color: #fbbf24; font-weight: 700;">ðŸž K's Bakery</p>
-      <p style="font-style: italic; color: #fde68a; margin-bottom: 8px;">"Umuwing Bida sa Tahanan kasama ang Kâ€™s Bakery!"</p>
-      <p>Handcrafted Breads & Pastries â€” The Perfect Everyday Pasalubong!</p>
-      <p style="margin-top: 16px; font-size: 12px; opacity: 0.7;">Â© 2026 K's Bakery. All rights reserved.</p>
+      <p style="font-family: 'Playfair Display', serif; font-size: 20px; color: #fbbf24; font-weight: 700;">&#127838; K's Bakery</p>
+      <p style="font-style: italic; color: #fde68a; margin-bottom: 8px;">&ldquo;Umuwing Bida sa Tahanan kasama ang K&rsquo;s Bakery!&rdquo;</p>
+      <p>Handcrafted Breads &amp; Pastries &mdash; The Perfect Everyday Pasalubong!</p>
+      <p style="margin-top: 16px; font-size: 12px; opacity: 0.7;">&copy; 2026 K's Bakery. All rights reserved.</p>
     </div>
   </footer>
+
+  <!-- Seller Sales Analytics & Volume Discount Rule Manager Modal -->
+  <div id="analyticsDiscountModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 560px;">
+      <div class="modal-header" style="background: #0284c7; color: #fff;">
+        <h3>&#128202; Sales Analytics &amp; Volume Discounts Engine</h3>
+        <button class="modal-close-btn" onclick="closeAnalyticsDiscountModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Tab 1: Sales Analytics Dashboard -->
+        <h4 style="font-family: 'Playfair Display', serif; font-size: 18px; color: #451a03; margin-bottom: 12px;">📊 Store Revenue &amp; Sales Summary</h4>
+        <div id="sellerAnalyticsSummaryContainer">
+          <!-- Dynamically populated analytics metrics -->
+        </div>
+
+        <!-- Tab 2: Volume Discount Rule Builder -->
+        <h4 style="font-family: 'Playfair Display', serif; font-size: 18px; color: #451a03; margin-top: 20px; margin-bottom: 8px; border-top: 1px dashed var(--border-amber); padding-top: 16px;">
+          &#127881; Configurable Volume Discount Rules
+        </h4>
+        <p style="font-size: 12px; color: #78350f; margin-bottom: 12px;">
+          Configure discounts based on the volume of items bought by customers (e.g. 10% OFF when buying 5+ items):
+        </p>
+
+        <div id="volumeDiscountRulesListContainer" class="tag-manager-list">
+          <!-- Dynamically populated discount rules -->
+        </div>
+
+        <!-- Add New Volume Discount Rule Form -->
+        <form onsubmit="addVolumeDiscountSubmit(event)" style="margin-top:16px; background: #fffbeb; padding: 14px; border-radius: 14px; border: 1.5px solid var(--border-amber);">
+          <h5 style="font-size: 14px; color: #451a03; margin-bottom: 10px; font-weight: 800;">➕ Create New Volume Discount Rule</h5>
+          
+          <div class="form-group">
+            <label>Target Bakery Item *</label>
+            <select id="discountRuleTargetSelect" class="form-control" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Min Quantity (e.g. 5) *</label>
+              <input type="number" id="discountRuleMinQtyInput" class="form-control" min="1" value="5" required>
+            </div>
+            <div class="form-group">
+              <label>Discount Type *</label>
+              <select id="discountRuleTypeSelect" class="form-control" required>
+                <option value="PERCENT">Percentage (% OFF)</option>
+                <option value="FIXED">Fixed Amount (&#8369; OFF)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Discount Value (e.g. 10 for 10%) *</label>
+            <input type="number" id="discountRuleValInput" class="form-control" step="0.01" min="0.01" value="10" placeholder="10" required>
+          </div>
+
+          <button type="submit" class="btn-primary" style="background:#16a34a;">
+            &#127881; Save Volume Discount Rule
+          </button>
+        </form>
+
+        <button type="button" class="btn-primary" style="background: #475569; margin-top: 16px;" onclick="closeAnalyticsDiscountModal()">
+          Close Analytics
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Facebook-Style Notification Center Modal (Customer Order History & Seller Master Log) -->
+  <div id="notificationModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 500px;">
+      <div class="modal-header" style="background: #2563eb; color: #fff;">
+        <h3 id="notifModalTitle">&#128276; Order Notifications &amp; Log</h3>
+        <button class="modal-close-btn" onclick="closeNotificationModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="notifLogContainer" class="notif-log-container">
+          <!-- Dynamically populated customer order log or seller master log -->
+        </div>
+
+        <button type="button" class="btn-primary" style="background: #475569; margin-top: 20px;" onclick="closeNotificationModal()">
+          Close Notifications
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Direct 1-Click Buy Now Modal -->
   <div id="orderModal" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header" style="background: linear-gradient(135deg, #16a34a, #15803d); color: #fff;">
-        <h3>âš¡ Buy Now Direct Order</h3>
-        <button class="modal-close-btn" onclick="closeOrderModal()">Ã—</button>
+        <h3>&#9889; Buy Now Direct Order</h3>
+        <button class="modal-close-btn" onclick="closeOrderModal()">&times;</button>
       </div>
       <div class="modal-body">
         <!-- Selected Item Summary -->
@@ -163,9 +260,12 @@
           <div>
             <h4 id="orderItemName" style="font-family:'Playfair Display', serif; font-size:18px; color:#291e14; margin-bottom:2px;">Item Name</h4>
             <span id="orderItemCategory" class="category-tag" style="position:static; display:inline-block; font-size:11px; padding:2px 8px;">Category</span>
-            <span id="orderItemPrice" style="font-weight:800; color:var(--primary-amber); margin-left:8px; font-size:16px;">â‚±0.00</span>
+            <span id="orderItemPrice" style="font-weight:800; color:var(--primary-amber); margin-left:8px; font-size:16px;">&#8369;0.00</span>
           </div>
         </div>
+
+        <!-- Single Item Volume Discount Callout Container -->
+        <div id="orderSingleDiscountContainer"></div>
 
         <form onsubmit="submitCustomerSingleOrder(event)">
           <div class="form-group">
@@ -187,24 +287,24 @@
           <div class="form-group">
             <label>Fulfillment Type *</label>
             <select id="orderFulfillment" class="form-control" required>
-              <option value="Pickup">ðŸª In-Store Pickup</option>
-              <option value="Delivery">ðŸ›µ Door-to-Door Delivery</option>
+              <option value="Pickup">&#127978; In-Store Pickup</option>
+              <option value="Delivery">&#128757; Door-to-Door Delivery</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label>Pickup Time / Delivery Address & Notes</label>
+            <label>Pickup Time / Delivery Address &amp; Notes</label>
             <textarea id="orderNote" class="form-control" rows="2" placeholder="e.g. Pickup around 4:00 PM today, or complete delivery address..."></textarea>
           </div>
 
           <!-- Total Calculation -->
           <div style="display:flex; justify-content:space-between; align-items:center; background:#451a03; color:#fff; padding:12px 18px; border-radius:12px; margin-bottom:20px;">
             <span style="font-size:14px; font-weight:600;">Total Amount:</span>
-            <span id="orderTotalPrice" style="font-size:24px; font-weight:800; color:#fbbf24;">â‚±0.00</span>
+            <span id="orderTotalPrice" style="font-size:24px; font-weight:800; color:#fbbf24;">&#8369;0.00</span>
           </div>
 
           <button type="submit" class="btn-sms-order">
-            ðŸ“± Checkout Direct Order
+            &#128241; Checkout Direct Order
           </button>
           
           <p style="font-size:12px; color:#78350f; text-align:center; margin-top:10px;">
@@ -219,8 +319,8 @@
   <div id="cartModal" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header" style="background:#ea580c; color:#fff;">
-        <h3>ðŸ›’ Shopee-Style Shopping Cart</h3>
-        <button class="modal-close-btn" onclick="closeCartModal()">Ã—</button>
+        <h3>&#128722; Shopee-Style Shopping Cart</h3>
+        <button class="modal-close-btn" onclick="closeCartModal()">&times;</button>
       </div>
       <div class="modal-body">
 
@@ -229,11 +329,14 @@
           <!-- Dynamically populated cart item rows -->
         </div>
 
+        <!-- Volume Discount Callout Container -->
+        <div id="cartDiscountContainer"></div>
+
         <!-- Total Calculation & Checkout Form -->
         <form onsubmit="submitCartOrderSMS(event)">
           <div style="display:flex; justify-content:space-between; align-items:center; background:#451a03; color:#fff; padding:14px 20px; border-radius:14px; margin-bottom:20px;">
             <span style="font-size:15px; font-weight:700;">Grand Total Amount:</span>
-            <span id="cartTotalAmountText" style="font-size:26px; font-weight:800; color:#fbbf24;">â‚±0.00</span>
+            <span id="cartTotalAmountText" style="font-size:26px; font-weight:800; color:#fbbf24;">&#8369;0.00</span>
           </div>
 
           <div class="form-group">
@@ -249,40 +352,40 @@
             <div class="form-group">
               <label>Fulfillment Type *</label>
               <select id="cartFulfillment" class="form-control" required>
-                <option value="Pickup">ðŸª In-Store Pickup</option>
-                <option value="Delivery">ðŸ›µ Door-to-Door Delivery</option>
+                <option value="Pickup">&#127978; In-Store Pickup</option>
+                <option value="Delivery">&#128757; Door-to-Door Delivery</option>
               </select>
             </div>
           </div>
 
           <div class="form-group">
-            <label>Pickup Time / Delivery Address & Notes</label>
+            <label>Pickup Time / Delivery Address &amp; Notes</label>
             <textarea id="cartNote" class="form-control" rows="2" placeholder="e.g. Delivery address or preferred pickup time..."></textarea>
           </div>
 
           <button type="submit" id="cartCheckoutBtn" class="btn-sms-order">
-            ðŸ“± Checkout & Send Order Message
+            &#128241; Checkout &amp; Send Order Message
           </button>
           
           <p style="font-size:12px; color:#78350f; text-align:center; margin-top:10px;">
-            Works seamlessly on Mobile Phones & Desktop PCs via Messenger (Mary Grace Baduyen Buligen), WhatsApp Web, and SMS!
+            Works seamlessly on Mobile Phones &amp; Desktop PCs via Messenger (Mary Grace Baduyen Buligen), WhatsApp Web, and SMS!
           </p>
         </form>
 
       </div>
     </div>
-  </div
+  </div>
 
   <!-- PC Desktop Checkout Modal (Direct Messenger Link to Mary Grace Baduyen Buligen) -->
   <div id="pcCheckoutModal" class="modal-overlay">
     <div class="modal-box" style="max-width: 480px;">
       <div class="modal-header" style="background:#16a34a; color:#fff;">
-        <h3>âœ… Order Ready to Send!</h3>
-        <button class="modal-close-btn" onclick="closePCCheckoutModal()">Ã—</button>
+        <h3>&check; Order Ready to Send!</h3>
+        <button class="modal-close-btn" onclick="closePCCheckoutModal()">&times;</button>
       </div>
       <div class="modal-body">
         <p style="font-size:14px; color:#291e14; margin-bottom:12px;">
-          Your order total is <b id="pcOrderTotalDisplay" style="color:#d97706; font-size:18px;">â‚±0.00</b>. Choose your preferred messaging app to send your order to the seller (<b>0995-531-4145</b>):
+          Your order total is <b id="pcOrderTotalDisplay" style="color:#d97706; font-size:18px;">&#8369;0.00</b>. Choose your preferred messaging app to send your order to the seller (<b>0995-531-4145</b>):
         </p>
 
         <!-- Formatted Text Area Preview -->
@@ -293,24 +396,24 @@
 
         <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
           <button type="button" class="btn-sms-order" style="background:#0084ff; color:#fff;" onclick="openMessenger()">
-            âš¡ Send via Facebook Messenger (Mary Grace Baduyen Buligen)
+            &#9889; Send via Facebook Messenger (Mary Grace Baduyen Buligen)
           </button>
 
           <button type="button" class="btn-sms-order" style="background:#25d366; color:#fff;" onclick="sendViaWhatsAppWeb()">
-            ðŸ’¬ Send via WhatsApp Web
+            &#128172; Send via WhatsApp Web
           </button>
           
           <button type="button" class="btn-primary" style="background:#6d28d9;" onclick="copyOrderTextBtnClick()">
-            ðŸ“‹ Copy Order Text (For Viber / Email)
+            &#128203; Copy Order Text (For Viber / Email)
           </button>
 
           <button type="button" class="form-control" style="cursor:pointer; font-weight:700; text-align:center;" onclick="sendViaMobileSMSLink()">
-            ðŸ“± Open Phone App / Windows Phone Link SMS
+            &#128241; Open Phone App / Windows Phone Link SMS
           </button>
         </div>
 
         <button type="button" class="btn-primary" style="background:#475569; margin-top:16px;" onclick="closePCCheckoutModal()">
-          Close & Finish Order
+          Close &amp; Finish Order
         </button>
       </div>
     </div>
@@ -321,7 +424,7 @@
     <div class="modal-box">
       <div class="modal-header">
         <h3 id="qvTitle">Pastry Details</h3>
-        <button class="modal-close-btn" onclick="closeQuickViewModal()">Ã—</button>
+        <button class="modal-close-btn" onclick="closeQuickViewModal()">&times;</button>
       </div>
       <div class="modal-body">
         <div style="position: relative; margin-bottom: 16px;">
@@ -330,19 +433,19 @@
           <span id="qvBadge" class="custom-badge" style="top:12px; right:12px;">Badge</span>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <span id="qvPrice" style="font-size:28px; font-weight:800; color:var(--primary-amber);">â‚±0.00</span>
-          <span id="qvAvailability" class="availability-badge avail-in-stock">ðŸŸ¢ In Stock</span>
+          <span id="qvPrice" style="font-size:28px; font-weight:800; color:var(--primary-amber);">&#8369;0.00</span>
+          <span id="qvAvailability" class="availability-badge avail-in-stock">&#128994; In Stock</span>
         </div>
         <div style="margin-bottom:20px;">
           <h4 style="font-size:14px; text-transform:uppercase; color:#78350f; margin-bottom:6px;">Description</h4>
           <p id="qvDescription" style="font-size:15px; color:#291e14; line-height:1.6;"></p>
         </div>
         <div style="background:#fffbeb; padding:16px; border-radius:12px; border:1px solid var(--border-amber); margin-bottom:16px;">
-          <p style="font-weight:700; font-size:13px; color:#451a03; margin-bottom:4px;">ðŸ“ž How to Order / Inquire:</p>
+          <p style="font-weight:700; font-size:13px; color:#451a03; margin-bottom:4px;">&#128222; How to Order / Inquire:</p>
           <p style="font-size:13px; color:#78350f;">Visit our store in Tabuk City or call/text us directly at <b>0995-531-4145</b> to place your order!</p>
         </div>
         <button id="qvOrderBtn" class="btn-sms-order" style="margin-bottom:10px;">
-          âš¡ Buy Now Direct Checkout
+          &#9889; Buy Now Direct Checkout
         </button>
         <button class="btn-primary" style="background:#475569;" onclick="closeQuickViewModal()">Close View</button>
       </div>
@@ -353,11 +456,11 @@
   <div id="sellerLoginModal" class="modal-overlay">
     <div class="modal-box" style="max-width: 400px;">
       <div class="modal-header">
-        <h3>ðŸ”’ Seller Login</h3>
-        <button class="modal-close-btn" onclick="closeSellerLoginModal()">Ã—</button>
+        <h3>&#128274; Seller Login</h3>
+        <button class="modal-close-btn" onclick="closeSellerLoginModal()">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="font-size:14px; color:#78350f; margin-bottom:16px;">Enter password to unlock Seller Portal (Post, Edit & Manage Pastries).</p>
+        <p style="font-size:14px; color:#78350f; margin-bottom:16px;">Enter password to unlock Seller Portal (Post, Edit &amp; Manage Pastries).</p>
         <div class="form-group">
           <label>Seller Password</label>
           <input type="password" id="sellerPasswordInput" class="form-control" placeholder="Enter seller password" required>
@@ -371,8 +474,8 @@
   <div id="manageTagsModal" class="modal-overlay">
     <div class="modal-box" style="max-width: 460px;">
       <div class="modal-header">
-        <h3>ðŸ·ï¸ Manage Bakery Product Tags</h3>
-        <button class="modal-close-btn" onclick="closeManageTagsModal()">Ã—</button>
+        <h3>&#127991;&#65039; Manage Bakery Product Tags</h3>
+        <button class="modal-close-btn" onclick="closeManageTagsModal()">&times;</button>
       </div>
       <div class="modal-body">
         <p style="font-size:13px; color:#78350f; margin-bottom:14px;">Add, edit, or delete product tags used to categorize pastries below:</p>
@@ -386,7 +489,7 @@
             <label>Add New Bakery Product Tag</label>
             <input type="text" id="newTagInput" class="form-control" placeholder="e.g. Muffins, Donuts, Pies..." required>
           </div>
-          <button type="submit" class="btn-primary" style="background:#6d28d9;">âž• Add Product Tag</button>
+          <button type="submit" class="btn-primary" style="background:#6d28d9;">&#10133; Add Product Tag</button>
         </form>
       </div>
     </div>
@@ -396,8 +499,8 @@
   <div id="pastryFormModal" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
-        <h3 id="modalTitleText">âž• Post New Pastry</h3>
-        <button class="modal-close-btn" onclick="closePastryFormModal()">Ã—</button>
+        <h3 id="modalTitleText">&#10133; Post New Pastry</h3>
+        <button class="modal-close-btn" onclick="closePastryFormModal()">&times;</button>
       </div>
       <div class="modal-body">
         <form onsubmit="savePastrySubmit(event)">
@@ -424,7 +527,7 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label>Price (â‚±) *</label>
+              <label>Price (&#8369;) *</label>
               <input type="number" id="pastryFormPrice" class="form-control" step="0.01" min="0" placeholder="85.00" required>
             </div>
             <div class="form-group">
@@ -454,7 +557,7 @@
           </div>
 
           <div style="display:flex; gap:12px; margin-top:20px;">
-            <button type="submit" class="btn-primary" style="flex:2;">ðŸ’¾ Save Pastry</button>
+            <button type="submit" class="btn-primary" style="flex:2;">&#128190; Save Pastry</button>
             <button type="button" class="form-control" style="flex:1; cursor:pointer;" onclick="closePastryFormModal()">Cancel</button>
           </div>
         </form>
@@ -468,5 +571,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
-
